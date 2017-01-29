@@ -1,3 +1,6 @@
+// Server Code
+// http://stackoverflow.com/questions/11952898/c-send-and-receive-file
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
