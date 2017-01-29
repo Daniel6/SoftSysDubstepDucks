@@ -20,6 +20,12 @@ A perpendicular improvement would be to also implement a P2P Chatroom so that yo
 
 ![System Interaction Map](https://github.com/Daniel6/SoftSysDubstepDucks/blob/master/images/torrent_system_plan.jpg)
 
+System interaction map for BitTorrent client
+
+![Client Flowchart](https://github.com/Daniel6/SoftSysDubstepDucks/blob/master/images/client_flowchart.jpg)
+
+Flowchart of actions for client to perform
+
 ###Roadblocks
 
 1. Olin network blocks torrent traffic so our network must be local using a network switch.  
