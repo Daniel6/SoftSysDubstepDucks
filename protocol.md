@@ -31,9 +31,10 @@ The specific tags for a metainfo file include:
 Split a file up into chunks that are then encoded and sent to the client, with a header containing information about the chunk (checksum, size, which file chunk, etc.)
 
 The number of pieces is indicated in the metainfo file. Size of each piece in the torrent is fixed, and given by the integer division:
-	```
-  Fixed_piece_size = size_of_torrent / number_of_pieces
-  ```
+
+```
+Fixed_piece_size = size_of_torrent / number_of_pieces
+```
 Generally the recommendation for size is given by whatever allows you to keep the metainfo file under 70 kb.
 
 These pieces are generally verified using a SHA1 hash.
