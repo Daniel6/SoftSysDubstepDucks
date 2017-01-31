@@ -46,6 +46,10 @@ int main(int argc, char **argv) {
   server_addr.sin_family = AF_INET;
   inet_pton(AF_INET, SERVER_ADDRESS, &(server_addr.sin_addr));
   server_addr.sin_port = htons(PORT_NUMBER);
+  int reuse = 1;
+  if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1)
+    error("Can't set the reuse option on the socket");
+
 
   /* Bind */
   if ((bind(server_socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr))) == -1) {
@@ -98,7 +102,7 @@ int main(int argc, char **argv) {
   }
 
   fprintf(stdout, "Server sent %d bytes for the size\n", len);
-
+  fprintf(stdout, "%d\n", BUFSIZ);
   offset = 0;
   remain_data = file_stat.st_size;
   /* Sending file data */
@@ -106,7 +110,14 @@ int main(int argc, char **argv) {
     fprintf(stdout, "1. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
     remain_data -= sent_bytes;
     fprintf(stdout, "2. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
+    fprintf(stdout, "HELLO\n");
   }
+  offset = 16;
+  char * buf = malloc(1);
+  *buf = ' ';
+  send(peer_socket, buf, strlen(buf), 0);
+
+  sendfile(peer_socket, fd, &offset, 16);
 
   close(peer_socket);
   close(server_socket);

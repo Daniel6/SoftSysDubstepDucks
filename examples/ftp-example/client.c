@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
+
   /* Receiving file size */
   recv(client_socket, buffer, BUFSIZ, 0);
   file_size = atoi(buffer);
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  remain_data = file_size;
+  remain_data = file_size+1;
 
   while (((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0) && (remain_data > 0)) {
     fwrite(buffer, sizeof(char), len, received_file);
