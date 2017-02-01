@@ -34,6 +34,10 @@
 #define PIECE 7
 #define CANCEL 8
 
+#define STATEMSGSIZE 5
+#define HAVEMSGSIZE 9
+#define REQUESTMSGSIZE 17
+#define CANCELMSGSIZE 17
 
 
 //SOME HARDCODED STUFF FOR NOW.
@@ -54,9 +58,11 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1);
 int count_char_bits(char b);
 int count_bitfield_bits(char * bitfield, int bitfieldLen);
 char * construct_bitfield_message(char * bitfield, int bitfieldLen);
-char * construct_state_msg(unsigned char msgID);
+char * construct_state_message(unsigned char msgID);
 char * construct_have_message(int piece_index);
 char * construct_request_message(int piece_index, int blockoffset, int blocklength);
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
+int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
+
 
 #endif //BTP_H_

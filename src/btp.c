@@ -102,7 +102,7 @@ char *construct_bitfield_message(char * bitfield, int bitfieldLen)
 	return msg;
 }
 
-char * construct_state_msg(unsigned char msgID)
+char * construct_state_message(unsigned char msgID)
 {
 	char * msg = malloc(5);
 	int * msgLen = malloc(4);
@@ -168,7 +168,7 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 	//MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
 	char * msg = malloc(17);
 	int * msgLen = malloc(4);
-	*msgLen = 17;
+	*msgLen = 13;
 	int * piece_id = malloc(4);
 	int * block_off = malloc(4);
 	int * block_len = malloc(4);
@@ -198,7 +198,7 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
 	//MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
 	char * msg = malloc(17);
 	int * msgLen = malloc(4);
-	*msgLen = 17;
+	*msgLen = 13;
 	int * piece_id = malloc(4);
 	int * block_off = malloc(4);
 	int * block_len = malloc(4);
@@ -221,4 +221,37 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
 	free(block_off);
 	free(block_len);
 	return msg;
+}
+
+
+char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
+{
+
+  memcpy(msgSize, bufPtr, 4);
+
+  char * message = malloc(*msgSize+4);
+  memcpy(message, bufPtr, *msgSize+4);
+  *msgSize += 4;
+  *msgID = *(bufPtr+4);
+  bufPtr = bufPtr +*msgSize;
+  
+  return message;
+}
+
+int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_pieces)
+{
+	int x;
+	int count = 0;
+	for(x = 0; x< bit_pieces; x++)
+		{
+		char * tester = malloc(1);
+		char common_bits = *(peer_buffer+x)&*(own_buffer+x);
+		
+		if((*(peer_buffer+x) - common_bits)!=0)
+			return 1;
+
+		printf("count bits%d\n", count_char_bits(*tester));
+		free(tester);	
+	}
+	return 0;
 }
