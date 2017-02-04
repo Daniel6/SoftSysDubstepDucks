@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   int piece_size = 16;
   char * bitfield = malloc(file_stat.st_size/piece_size/8);
   int total_pieces = file_stat.st_size/piece_size;
-  memset(bitfield, 255, total_pieces);
+  memset(bitfield, 128, total_pieces);
   
   int bitfieldMsgLength = 4 + 1 + total_pieces/8;
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
   char * unchokeMsg = construct_state_message(UNCHOKE);
   char * interestedMsg = construct_state_message(INTERESTED);
   char * uninterestedMsg = construct_state_message(UNINTERESTED);
-  char * haveMsg = construct_have_message(15);
+  char * haveMsg = construct_have_message(0);
   char * requestMsg = construct_request_message(1,2,3);
   char * cancelMsg = construct_cancel_message(9,8,7);
 
@@ -124,8 +124,9 @@ int main(int argc, char **argv) {
   memcpy(testmsg+bitfieldMsgLength+STATEMSGSIZE*4, haveMsg, HAVEMSGSIZE);
   memcpy(testmsg+bitfieldMsgLength+STATEMSGSIZE*4+HAVEMSGSIZE, requestMsg, REQUESTMSGSIZE);
   memcpy(testmsg+bitfieldMsgLength+STATEMSGSIZE*4+HAVEMSGSIZE+REQUESTMSGSIZE, cancelMsg, CANCELMSGSIZE);
-  print_hex_memory(testmsg, STATEMSGSIZE*4 + HAVEMSGSIZE + REQUESTMSGSIZE + CANCELMSGSIZE+bitfieldMsgLength);
 
+  print_hex_memory(testmsg, STATEMSGSIZE*4 + HAVEMSGSIZE + REQUESTMSGSIZE + CANCELMSGSIZE+bitfieldMsgLength);
+  
 
   if(send(peer_socket, testmsg, STATEMSGSIZE*4 + HAVEMSGSIZE + REQUESTMSGSIZE + CANCELMSGSIZE+bitfieldMsgLength, 0)==-1)
   {

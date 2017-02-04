@@ -9,7 +9,7 @@ int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_addre
 
     exit(EXIT_FAILURE);
   }
-
+  
  /* Zeroing server_addr struct */
   memset(server_addr_p, 0, sizeof(*server_addr_p));
   server_addr_p->sin_family = AF_INET;
@@ -32,6 +32,22 @@ void print_hex_memory(void *mem, int size) {
   }
   printf("\n");
 }
+// Support code to print the binary representation of some memory.
+// source: http://stackoverflow.com/questions/35364772/how-to-print-memory-bits-in-c
+void print_bits ( void* buf, size_t size_in_bytes )
+{
+    char* ptr = (char*)buf;
+
+    for (size_t i = 0; i < size_in_bytes; i++) {
+        for (short j = 7; j >= 0; j--) {
+            printf("%d", (ptr[i] >> j) & 1);
+        }
+        printf(" ");
+    }
+    printf("\n");
+}
+
+
 
 char * construct_handshake(char* hash, char* id)
 {
@@ -255,3 +271,5 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 	}
 	return 0;
 }
+
+

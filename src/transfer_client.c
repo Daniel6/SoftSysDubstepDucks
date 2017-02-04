@@ -43,6 +43,8 @@ int main(int argc, char **argv) {
   //Initialize Peer Bitfield for torrent file;
 	char * peerBitfield = malloc(total_pieces/8);
 	memset(peerBitfield, 0, total_pieces/8); 
+	char * piece_status = malloc(total_pieces);
+
   //Declare bitfield message length, maps from total pieces to the number of 
   //bits needed to represent it. (Hence the total_pieces/8) -> 8 being # of 
   //bits in a char.
@@ -157,12 +159,12 @@ int main(int argc, char **argv) {
 		fprintf(stdout, "Dropped Connection\n");
 		exit(EXIT_FAILURE);
 	}
-		//bufPtr has direct access to buffer. Reminder to not mess it up
-		//accidently. 
+	//bufPtr has direct access to buffer. Reminder to not mess it up
+	//accidently. 
 	char * bufPtr = &buffer;
 	int *  msgSize = malloc(4);
 	char * msgID = malloc(1);
-
+	//INTERPRET MESSAGES HERE.
 	while(recieved_bytes > 0)
 	{ 
 		char * msg1 = get_next_msg(bufPtr, msgID, msgSize);
@@ -170,39 +172,80 @@ int main(int argc, char **argv) {
 		switch(*msgID)
 		{
 			case(CHOKE):
+			ownChoked = 1;
 			printf("choked tho\n");
 			break;
 			case(UNCHOKE):
+			ownChoked = 0;
 			printf("unchoked tho\n");
 			break;
 			case(INTERESTED):
+			peerInterested = 1;
 			printf("interested tho\n");            
 			break;
 			case(UNINTERESTED):
+			peerInterested = 0;
 			printf("uninterested tho\n");
 			break;
 			case(HAVE):
+			;
+			//Reminder for the future -> write this into a function. 
+			int *test = malloc(4);
+			memcpy(test, msg1+5, 4);
+			int byte_of_piece = *test/8;
+			int	bit_of_piece = *test%8;
+			char * byte_of_interest = peerBitfield;
+			byte_of_interest = peerBitfield + byte_of_piece ;
+			*byte_of_interest |= 1 << (7-bit_of_piece);
+			free(test);
+			print_bit(peerBitfield, 2);
+			print_bit()
 			printf("have tho\n");            
 			break;
 			case(BITFIELD):
+			//Technically this should never happen. 
+			memcpy(peerBitfield, msg1+5, total_pieces);
 			printf("bitfield tho\n");
 			break;
 			case(REQUEST):
+
+			//Some kind of way to put on queue this send command. 
 			printf("request tho\n");
 			break;              
 			case(PIECE):
+			//Insert saving files code here lol. + Parsing the thing + how to deal 
+			//with blocks within a piece?
+
 			printf("piece tho\n");
 			break;
 			case(CANCEL):
+			//Need to cancel the queue reponse. 
+
 			printf("cancel tho\n");
 			break;
 			default:
 			;
 		}
-
-
 		recieved_bytes -= *msgSize;
 		free(msg1);          
+
+
+		//Create uninterested message. 
+		if(0==peerContainsUndownloadedPieces(peerBitfield, ownBitfield, bitfieldLen))
+		{
+			char * uninterested = construct_state_message(UNINTERESTED);
+			ownInterested = FALSE;
+			if(send(client_socket, uninterested, STATEMSGSIZE,0)==-1){
+				fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			free(uninterested);
+		}
+
+
+
+
+
 	}
 
 	free(msgSize);
@@ -211,6 +254,7 @@ int main(int argc, char **argv) {
 
 
 
+	free(piece_status);
 	while (((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0) && (remain_data > 0)) {
 		fwrite(buffer, sizeof(char), len, received_file);
 		remain_data -= len;
