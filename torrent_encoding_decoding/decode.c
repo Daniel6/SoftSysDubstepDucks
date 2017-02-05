@@ -5,14 +5,15 @@
 #include "bencode.h"
 
 
-bt_info_t * decodeFile(char target[]){
-	be_node * node = load_be_node(target);
+bt_info_t * decodeFile(char target[]){	// reads information from a torrent file and returns a bt_info_t with relevent torrent information
+	be_node * node = load_be_node(target);	// creates a be_node from the torrent file
 	bt_info_t * out = (bt_info_t *) malloc(1000);
 
 	size_t i,j;
 	be_node * currnode;
 	be_node * infonode;
 
+	// populate the bt_info_t object with information from the be_node
 	for (i = 0; node->val.d[i].val; ++i) {
 	    currnode = node -> val.d[i].val;
 	    if(strcmp(node->val.d[i].key,"announce") == 0){
