@@ -17,10 +17,15 @@
 #include <sys/sendfile.h>
 #include <openssl/sha.h>
 #include <byteswap.h>
+#include <poll.h>
 
 //Defining bool types.
 #define TRUE 0
 #define FALSE 1
+
+//Defining Status of Connection:
+
+#define NOREQUEST -1
 
 
 //Define message IDs -> Might want to do an enumeration instead.
@@ -40,19 +45,41 @@
 #define CANCELMSGSIZE 17
 
 
-//SOME HARDCODED STUFF FOR NOW.
-#define PORT_NUMBER     5000
-#define SERVER_ADDRESS  "127.0.0.1"
-#define FILE_TO_SEND    "testfile.txt"
+//Maximums
+#define MAX_BACKLOGSIZE 10
+#define MAX_PEERS 10
+#define MAX_CONNECTIONS 500
+
+//SOME HARDCODED STUFF -> mainly protocol specific variables.
 const char* BTPROTOCOL = "BitTorrent protocol";
 const unsigned char PROTOCOLNAMELENGTH = 19;
 const unsigned int FULLHANDSHAKELENGTH = 68;
 
+//Some hardcoded things to be removed later
+#define PORT_NUMBER     30001
+#define SERVER_ADDRESS  "127.0.0.1"
+#define FILE_TO_SEND    "testfile.txt"
+
+
+struct connection_info{
+	char ownInterested;
+	char ownChoked;
+	char peerInterested;
+	char peerChoked;
+	char * peerBitfield;
+	int sent_request;
+};
+
+
+
+
 #include "btp.c"
 
 //Inherent assumption that hash and char are length 20 arrays. 
+void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_inf_file);
 char* construct_handshake(char * hash, char * id);
 int server_socket_wrapper(struct sockaddr_in * server_addr, char * server_address, int port_number);
+int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number);
 void print_hex_memory(void *mem, int size);
 int verify_handshake(char* handshakeToVerify, char* clientFileSHA1);
 int count_char_bits(char b);

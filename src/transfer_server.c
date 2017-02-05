@@ -22,29 +22,12 @@ int main(int argc, char **argv) {
   server_socket = server_socket_wrapper(&server_addr, SERVER_ADDRESS, PORT_NUMBER);
 
 
-
-  /* Bind */
-  if ((bind(server_socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr))) == -1) {
-    fprintf(stderr, "Error on bind --> %s", strerror(errno));
-
-    exit(EXIT_FAILURE);
-  }
-
-  /* Listening to incoming connections */
-  if ((listen(server_socket, 5)) == -1) {
-    fprintf(stderr, "Error on listen --> %s", strerror(errno));
-
-    exit(EXIT_FAILURE);
-  }
-
-
   fd = open(FILE_TO_SEND, O_RDONLY);
   if (fd == -1) {
     fprintf(stderr, "Error opening file --> %s", strerror(errno));
 
     exit(EXIT_FAILURE);
   }
-
   /* Get file stats */
   if (fstat(fd, &file_stat) < 0) {
     fprintf(stderr, "Error fstat --> %s", strerror(errno));
@@ -68,7 +51,6 @@ int main(int argc, char **argv) {
   peer_socket = accept(server_socket, (struct sockaddr *)&peer_addr, &sock_len);
   if (peer_socket == -1) {
     fprintf(stderr, "Error on accept --> %s", strerror(errno));
-
     exit(EXIT_FAILURE);
   }
 
@@ -100,7 +82,6 @@ int main(int argc, char **argv) {
   {
     fprintf(stderr, "Sending BF message failed");
     exit(EXIT_FAILURE);
-
   }
 
   // TESTING SCRIPTS DELETE BELOW LATER

@@ -14,19 +14,8 @@ int main(int argc, char **argv) {
 	int remain_data = 0;
 
 
-  /* Zeroing remote_addr struct */
-	memset(&remote_addr, 0, sizeof(remote_addr));
-  /* Construct remote_addr struct */
-	remote_addr.sin_family = AF_INET;
-	inet_pton(AF_INET, SERVER_ADDRESS, &(remote_addr.sin_addr));
-	remote_addr.sin_port = htons(PORT_NUMBER);
-  /* Create client socket */
-	client_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (client_socket == -1) {
-		fprintf(stderr, "Error creating socket --> %s\n", strerror(errno));
+	client_socket = client_socket_wrapper(&remote_addr, SERVER_ADDRESS, PORT_NUMBER);
 
-		exit(EXIT_FAILURE);
-	}
   /* Connect to the server */
 	if (connect(client_socket, (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) == -1) {
 		fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
@@ -60,7 +49,7 @@ int main(int argc, char **argv) {
 	char * sha = "AAAAAAAAAAAAAAAAAAA1";
 	char * own_handshake = construct_handshake(sha, sha);
   //Tries to send handshake.
-	if(send(client_socket, own_handshake, 68,0)==-1){
+	if(send(client_socket, own_handshake, FULLHANDSHAKELENGTH,0)==-1){
 		fprintf(stderr, "Error on send --> %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -198,8 +187,8 @@ int main(int argc, char **argv) {
 			byte_of_interest = peerBitfield + byte_of_piece ;
 			*byte_of_interest |= 1 << (7-bit_of_piece);
 			free(test);
-			print_bit(peerBitfield, 2);
-			print_bit()
+			print_bits(peerBitfield, 2);
+
 			printf("have tho\n");            
 			break;
 			case(BITFIELD):
@@ -250,8 +239,6 @@ int main(int argc, char **argv) {
 
 	free(msgSize);
 	free(msgID);
-
-
 
 
 	free(piece_status);
