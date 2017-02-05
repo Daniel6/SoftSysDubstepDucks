@@ -155,7 +155,7 @@ void *handler(void *arguments) {
       if (i < sizeof(buf)) {
         fprintf(stdout, "%d\n", i);
         i++;
-        // fprintf(stdout, "%s\n", ch);
+         fprintf(stdout, "%c\n", ch);
         // buf[i++] = ch;
       }
       ch = fgetc(fp);
