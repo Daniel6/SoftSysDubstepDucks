@@ -89,33 +89,6 @@ int say(int socket, char *s) {
   return result;
 }
 
-int read_in(int socket, char *buf, int len) {
-  /* treat the socket stream as a regular IO stream, 
-     so we can do character IO */
-  FILE *fp = fdopen(socket, "r");
-  int i = 0, ch;
-  
-  /* eat any leading whitespace */
-  while (isspace(ch = fgetc(fp)) && ch != EOF);
-  if (ferror(fp))
-    error("fgetc");
-  
-  while (ch != '\n' && ch != EOF) {
-    if (i < len)
-      buf[i++] = ch;
-    ch = fgetc(fp);
-  }
-  if (ferror(fp))
-    error("fgetc");
-  
-  /* terminate the string, eating any trailing whitespace */
-  while (isspace(buf[--i])) {
-    buf[i] = '\0';
-  }
-
-  return strlen(buf);
-}
-
 int main(int argc, char *argv[]) {
   int connect_d = 0, rc = 0;
   char intro_msg[] = "Torrent Tracker Server\nType 'j' to join\n";
@@ -170,11 +143,34 @@ void *handler(void *arguments) {
   fprintf(stdout, "Client %s connected\n", ip);
   if (say(client_socket, "Torrent Tracker\n") == -1) {
     close(client_socket);
+  } else {
+    char buf[16];
+    FILE *fp = fdopen(client_socket, "r");
+    int i = 0;
+    int ch;
+    while (isspace(ch = fgetc(fp)) && ch != EOF);
+    if (ferror(fp))
+      error("fgetc");
+    while (ch != '\n' && ch != EOF) {
+      if (i < sizeof(buf)) {
+        fprintf(stdout, "%d\n", i);
+        i++;
+        // fprintf(stdout, "%s\n", ch);
+        // buf[i++] = ch;
+      }
+      ch = fgetc(fp);
+    }
+    // if (ferror(fp))
+    //   error("fgetc");
+  
+    /* terminate the string, eating any trailing whitespace */
+    // while (isspace(buf[--i])) {
+      // buf[i] = '\0';
+    // }
   }
 
-  char buf[255];
-  read_in(client_socket, buf, sizeof(buf));
-  fprintf(stdout, "%s\n", buf[0]);
+  // read_in(client_socket, &buf, sizeof(buf));
+  // fprintf(stdout, "%s\n", buf[0]); // SEGFAULT
   // if (strlen(buf) == 1) {
   //   if (buf[0] == 'j') {
   //     fprintf(stdout, "Client join: %s\n");
