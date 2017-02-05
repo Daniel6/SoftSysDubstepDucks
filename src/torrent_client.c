@@ -16,7 +16,7 @@ int main(int argc, char ** argv)
 	// For now, SERVER ADDRESS and PORT_NUMBER need to be defined 
 	// Somehow specifically for the computer -> not just homing it. 
 	char * own_ip = SERVER_ADDRESS+1;
-	int own_port = PORT_NUMBER;
+	int own_port = LISTENER_PORT_NUMBER;
 	//parse torrent file here
 	/*Output Ithink includes 
 	announce string -> tracker URI, 
@@ -37,13 +37,15 @@ int main(int argc, char ** argv)
 	int file_length = 256;
 	int piece_size_bytes = 16;
 	int total_pieces_in_file = file_length/piece_size_bytes;
+	int bitfieldLen = total_pieces_in_file/8;
+
 	//total_pieces_in_file/8 = number of bytes allocated for containing a
 	//bitfield where each bit represents each piece in torrent.
-	char * bitfield_of_current_pieces = malloc(total_pieces_in_file/8);
+	char * bitfield_of_current_pieces = malloc(bitfieldLen);
 	//Initializing bitfield to zero. 
-	memset(bitfield_of_current_pieces, 0, total_pieces_in_file/8);
+	memset(bitfield_of_current_pieces, 0, bitfieldLen);
 	//Length of bitfieldMsgs for when sending to other peers. 
-	int bitfieldMsgLength = 4 + 1 + total_pieces_in_file/8;
+	int bitfieldMsgLength = 4 + 1 + bitfieldLen;
 	//Construct Handshake 
 	//Own_id will probably be best to be input as an argument to program. Must
 	//Be unique across the network. 
@@ -95,6 +97,8 @@ int main(int argc, char ** argv)
 		fds[i+1].fd = client_socket;
 		fds[i+1].fd = POLLIN|POLLOUT;
 
+		initialize_connection(&connections[i], total_pieces_in_file);
+
 		/* Connect to the server */
 		if (connect(client_socket, &remote_addr, sizeof(struct sockaddr)) == -1) {
 			fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
@@ -125,14 +129,13 @@ int main(int argc, char ** argv)
 		else if(recieved_bytes == FULLHANDSHAKELENGTH)
 		{
 			memcpy(peer_handshake, buffer, 68);
-			test = verify_handshake(peer_handshake, sha);
+			test = verify_handshake(peer_handshake, file_sha);
 		    // Testing for issues on handshake.
 			if(test)
 			{
 				fprintf(stderr, "Error on handshake ---> %d\n", test);
 				exit(EXIT_FAILURE);
 			}
-
 			memset(buffer, 0, sizeof(buffer));
 			free(peer_handshake);
 		}	
@@ -140,7 +143,7 @@ int main(int argc, char ** argv)
 		{
 			char * bitfield_message = malloc(bitfieldMsgLength);
 			memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
-			test = verify_handshake(peer_handshake, sha);
+			test = verify_handshake(peer_handshake, file_sha);
 		    // Testing for issues on handshake.
 			if(test)
 			{
@@ -149,13 +152,13 @@ int main(int argc, char ** argv)
 			}
 	   	    //If there is a bitfield option, set bitfield. 
 			memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
-			memcpy(peerBitfield, bitfield_message+5, total_pieces);
+			memcpy(connections[i].peerBitfield, bitfield_message+5, total_pieces_in_file);
 			memset(buffer, 0, sizeof(buffer));
 
-			if(0<peerContainsUndownloadedPieces(peerBitfield, ownBitfield, bitfieldLen))
+			if(0<peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen))
 			{
 				char * interested = construct_state_message(INTERESTED);
-				ownInterested = TRUE;
+				connections[i].ownInterested = TRUE;
 				if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
 					fprintf(stderr, "Error on send --> %s\n", strerror(errno));
 					exit(EXIT_FAILURE);
@@ -170,16 +173,10 @@ int main(int argc, char ** argv)
 				}
 				free(uninterested);	
 				}
-	  //Free handshake  + memory after completion. -> Don't think we need it afterwards
+	    //Free handshake  + memory after completion. -> Don't think we need it afterwards
 			free(bitfield_message);
 			free(peer_handshake);
-		};
-
-
-
-		initialize_connection(&connections[i], total_pieces_in_file);
-
-	
+		};	
 	}
 
 
