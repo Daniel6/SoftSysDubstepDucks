@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 	int remain_data = 0;
 
 
-	client_socket = client_socket_wrapper(&remote_addr, SERVER_ADDRESS, PORT_NUMBER);
+	client_socket = client_socket_wrapper(&remote_addr, SERVER_ADDRESS, LISTENER_PORT_NUMBER);
 
   /* Connect to the server */
 	if (connect(client_socket, (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) == -1) {

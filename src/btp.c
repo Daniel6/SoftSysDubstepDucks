@@ -317,3 +317,4 @@ void initialize_connection(struct connection_info* connection_to_initialize, int
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }
 
+

@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
   int remain_data;
   char buffer[BUFSIZ];
   /* Create server socket + construct server_addr struct*/
-  server_socket = server_socket_wrapper(&server_addr, SERVER_ADDRESS, PORT_NUMBER);
+  server_socket = server_socket_wrapper(&server_addr, SERVER_ADDRESS, LISTENER_PORT_NUMBER);
 
 
   fd = open(FILE_TO_SEND, O_RDONLY);
@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
 //  fprintf(stdout, "File Size: \n%d bytes\n", (uint32_t)file_stat.st_size);
 
   sock_len = sizeof(struct sockaddr_in);
+  char * sha = "AAAAAAAAAAAAAAAAAAA1";
 
 //Initially setting up a bitfield representing the parts of the file.
   int piece_size = 16;
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
   memset(bitfield, 128, total_pieces);
   
   int bitfieldMsgLength = 4 + 1 + total_pieces/8;
-
+  printf("testing\n");
   /* Accepting incoming peers */
   peer_socket = accept(server_socket, (struct sockaddr *)&peer_addr, &sock_len);
   if (peer_socket == -1) {
@@ -54,14 +55,11 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
+  printf("testing\n");
 
-
-  char * sha = "AAAAAAAAAAAAAAAAAAA1";
   len = recv(peer_socket, buffer, BUFSIZ, 0);
-  //print_hex_memory(buffer, 68);
-//  printf("\n len is %d\n", len);
+
   int test = verify_handshake(buffer, sha);
-  printf("%d\n", test);
   if(test)
   {
     fprintf(stderr, "Error on handshake ---> %d\n", test);

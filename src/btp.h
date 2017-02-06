@@ -56,7 +56,7 @@ const unsigned char PROTOCOLNAMELENGTH = 19;
 const unsigned int FULLHANDSHAKELENGTH = 68;
 
 //Some hardcoded things to be removed later
-#define PORT_NUMBER     30000
+#define LISTENER_PORT_NUMBER     30000
 #define SERVER_ADDRESS  "127.0.0.1"
 #define FILE_TO_SEND    "testfile.txt"
 

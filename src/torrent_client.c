@@ -8,6 +8,9 @@ int main(int argc, char ** argv)
 	struct sockaddr_in peer[MAX_PEERS];
 	struct pollfd fds[MAX_CONNECTIONS];
 	memset(fds, 0 , sizeof(fds));
+	fds[0].fd = client_socket;
+	fds[0].fd = POLLIN;
+
 	//Important Global Variables for right now. 
 	int sock_len = sizeof(struct sockaddr *);
 	// Listener socket information
@@ -15,7 +18,7 @@ int main(int argc, char ** argv)
 	struct sockaddr_in listener_addr;
 	// For now, SERVER ADDRESS and PORT_NUMBER need to be defined 
 	// Somehow specifically for the computer -> not just homing it. 
-	char * own_ip = SERVER_ADDRESS+1;
+	char * own_ip = SERVER_ADDRESS;
 	int own_port = LISTENER_PORT_NUMBER;
 	//parse torrent file here
 	/*Output Ithink includes 
@@ -72,14 +75,13 @@ int main(int argc, char ** argv)
 	int num_of_peers = 1;
 
 	//Need array lol
-	int port_number = 30001;
+	int port_number = LISTENER_PORT_NUMBER;
 	char * ip = "127.0.0.1";
-
 	//Creating a listening socket, has room for 10 connections in backlog. decided to have it 
 	//on last connection
-	listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
-	fds[0].fd = listener_socket;
-	fds[0].events = POLLIN|POLLOUT;
+//	listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
+//	fds[0].fd = listener_socket;
+//	fds[0].events = POLLIN|POLLOUT;
 
 
 	int i = 0;
@@ -88,6 +90,9 @@ int main(int argc, char ** argv)
 		peers_to_connect_to = MAX_CONNECTIONS-1;
 	}
 	char * ip_buf = malloc(16*sizeof(char));
+
+	//For accesing the peer array in connections[i], i = 1+fdsindex for the 
+	//corresponding socket
 
 	for(i; i<peers_to_connect_to; i++){
 		//Create a new socket address from peer -> do we need this? Might not.
@@ -104,6 +109,8 @@ int main(int argc, char ** argv)
 			fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
+
+		printf("connected\n");
 		if(send(client_socket, own_handshake, FULLHANDSHAKELENGTH,0)==-1){
 			fprintf(stderr, "Error on send --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
@@ -154,9 +161,9 @@ int main(int argc, char ** argv)
 			memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
 			memcpy(connections[i].peerBitfield, bitfield_message+5, total_pieces_in_file);
 			memset(buffer, 0, sizeof(buffer));
-
 			if(0<peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen))
 			{
+
 				char * interested = construct_state_message(INTERESTED);
 				connections[i].ownInterested = TRUE;
 				if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
@@ -179,6 +186,32 @@ int main(int argc, char ** argv)
 		};	
 	}
 
+
+	for(;;)
+	{
+		int rv = poll(fds, POLLIN|POLLOUT, 60*1000);
+		if(rv == -1){
+			fprintf(stderr, "Poll failed--> %s\n", strerror(errno));
+			exit(EXIT_FAILURE);		
+		}
+		else if(rv ==0)
+		{
+			printf("No response after 1 minute");
+		}
+		else{
+			//Deal w/ listener
+
+
+			//Deal w/ every otheer one. 
+
+
+
+		}
+
+
+
+
+	}
 
 
 
