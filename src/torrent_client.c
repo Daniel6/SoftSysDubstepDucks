@@ -8,8 +8,6 @@ int main(int argc, char ** argv)
 	struct sockaddr_in peer[MAX_PEERS];
 	struct pollfd fds[MAX_CONNECTIONS];
 	memset(fds, 0 , sizeof(fds));
-	fds[0].fd = client_socket;
-	fds[0].fd = POLLIN;
 
 	//Important Global Variables for right now. 
 	int sock_len = sizeof(struct sockaddr *);
@@ -34,9 +32,9 @@ int main(int argc, char ** argv)
 	//hashes of the string?
 	//Below code is temporary until somebody writes a thing to get 
 	//and parse torrent file. 
-	char * announce = "127.0.0.1 8000";
-	char * announce_ips = "???";
-	char * file_name = "testfile.txt";
+//	char * announce = "127.0.0.1 8000";
+//	char * announce_ips = "???";
+//	char * file_name = "testfile.txt";
 	int file_length = 256;
 	int piece_size_bytes = 16;
 	int total_pieces_in_file = file_length/piece_size_bytes;
@@ -45,8 +43,8 @@ int main(int argc, char ** argv)
 	//total_pieces_in_file/8 = number of bytes allocated for containing a
 	//bitfield where each bit represents each piece in torrent.
 	char * bitfield_of_current_pieces = malloc(bitfieldLen);
-	//Initializing bitfield to zero. 
 	memset(bitfield_of_current_pieces, 0, bitfieldLen);
+
 	//Length of bitfieldMsgs for when sending to other peers. 
 	int bitfieldMsgLength = 4 + 1 + bitfieldLen;
 	//Construct Handshake 
@@ -79,9 +77,9 @@ int main(int argc, char ** argv)
 	char * ip = "127.0.0.1";
 	//Creating a listening socket, has room for 10 connections in backlog. decided to have it 
 	//on last connection
-//	listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
-//	fds[0].fd = listener_socket;
-//	fds[0].events = POLLIN|POLLOUT;
+	listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
+	fds[0].fd = listener_socket;
+	fds[0].events = POLLIN|POLLOUT;
 
 
 	int i = 0;
@@ -89,7 +87,7 @@ int main(int argc, char ** argv)
 	if(num_of_peers > MAX_CONNECTIONS-1){
 		peers_to_connect_to = MAX_CONNECTIONS-1;
 	}
-	char * ip_buf = malloc(16*sizeof(char));
+//	char * ip_buf = malloc(16*sizeof(char));
 
 	//For accesing the peer array in connections[i], i = 1+fdsindex for the 
 	//corresponding socket
@@ -98,14 +96,14 @@ int main(int argc, char ** argv)
 		//Create a new socket address from peer -> do we need this? Might not.
 		//Mostly because of the fact tahat we rewrite peers. But just in case.
 		struct sockaddr_in *remote_addr = &peer[i];
-		int client_socket = client_socket_wrapper(&remote_addr, ip, port_number);
+		int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, ip, port_number);
 		fds[i+1].fd = client_socket;
 		fds[i+1].fd = POLLIN|POLLOUT;
 
 		initialize_connection(&connections[i], total_pieces_in_file);
 
 		/* Connect to the server */
-		if (connect(client_socket, &remote_addr, sizeof(struct sockaddr)) == -1) {
+		if (connect(client_socket,  &remote_addr, sizeof(struct sockaddr)) == -1) {
 			fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
