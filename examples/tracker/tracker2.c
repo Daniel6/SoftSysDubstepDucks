@@ -19,6 +19,7 @@ int numClients;
 
 void* handler(void *args);
 int addClient(char *ip);
+void sendClients(int socket);
 
 int main(int argc, char *argv[]) {
   fprintf(stdout, "Torrent Tracker Initializing.\n");
@@ -69,25 +70,38 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+/*
+  Handles communication with one client. Closes socket after processing command.
+  TODO: Poll the client to detect remote disconnections
+*/
 void *handler(void *arguments) {
   struct handler_args *args = arguments;
   int client_socket = args->socket_filedef;
   char *ip = args->ip;
   fprintf(stdout, "Client %s connected.\n", ip);
 
+  // TODO: iterate upon this to support the execution of multiple commands before closing the connection.
   char *recv_msg = recvMsg(client_socket);
   if (strncmp(recv_msg + 1, "join", 4) == 0) {
+    // Execute the "join" command
     fprintf(stdout, "Client %s is joining the peer list.\n", ip);
     if (addClient(ip) == 0) {
       sendMsg(client_socket, "joined");
     } else {
       sendMsg(client_socket, "failed to join");
     }
+  } else if (strncmp(recv_msg + 1, "list", 4) == 0) {
+    // Execute the "list" command
+    sendClients(client_socket);
   }
   free(recv_msg);
   close(client_socket);
 }
 
+/*
+  Add the connected client's ip address to the list of "joined" ips.
+  This list is available upon request to any client.
+*/
 int addClient(char *ip) {
   if (numClients < MAXCLIENTS) {
     clients[numClients] = ip;
@@ -97,5 +111,29 @@ int addClient(char *ip) {
   } else {
     fprintf(stderr, "Client tried to join but maximum number of clients is reached (%d out of %d).\n", numClients, MAXCLIENTS);
     return -1;
+  }
+}
+
+void sendClients(int socket) {
+  // Send number of clients
+  char *data = malloc(2);
+  int dl = 1;
+  memcpy(data, &dl, 1);
+  memcpy(data + 1, &numClients, 1);
+  if (sendData(socket, data, 2) < 0) {
+    return;
+  }
+
+  // Send each ip of each client
+  int i;
+  for (i = 0; i < numClients; i++) {
+    data = (char *)calloc(17, sizeof(char));
+    dl = 16;
+    memcpy(data, &dl, 1);
+    memcpy(data + 1, clients[i], 16);
+    fprintf(stdout, "Sending peer: %s\n", data + 1);
+    if (sendData(socket, data, 17) < 0) {
+      break;
+    }
   }
 }

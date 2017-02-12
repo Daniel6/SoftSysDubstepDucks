@@ -10,8 +10,11 @@
 void joinTracker(int tracker_socket);
 void requestPeers(int tracker_socket);
 
+char *peers[255];
+int numPeers;
+
 int main() {
-  fprintf(stdout, "Torrent Client Initializing.\nPress 'j' to join or 'e' to exit.\n");
+  fprintf(stdout, "Torrent Client Initializing.\nControls:\n    'j' to join\n    'l' to get peers\n    'e' to exit\n");
   char *line = NULL;
   size_t len = 0;
   ssize_t line_length;
@@ -34,6 +37,7 @@ int main() {
     exit(1);
   }
 
+  // Listen for commands
   while ((line_length = getline(&line, &len, stdin)) != -1) {
     if (strncmp(line, "e", 1) == 0) {
       fprintf(stdout, "Exiting.\n");
@@ -41,7 +45,7 @@ int main() {
     } else if (strncmp(line, "j", 1) == 0) {
       fprintf(stdout, "Registering as available peer...\n");
       joinTracker(tracker_socket);
-    } else if (strncmp(line, "r", 1) == 0) {
+    } else if (strncmp(line, "l", 1) == 0) {
       fprintf(stdout, "Requesting peer list...\n");
       requestPeers(tracker_socket);
     }
@@ -53,21 +57,47 @@ int main() {
   return 0;
 }
 
+/*
+  Request that the tracker server send all ips of other clients which have "joined"
+  The response comes in many parts.
+  The first part details how many ips will be sent, and by extension how many more messages are coming.
+  Each extra message contains 1 ip.
+*/
 void requestPeers(int tracker_socket) {
   if (sendMsg(tracker_socket, "list") == 0) {
-    char *recv_msg = recvMsg(tracker_socket);
-    if (strncmp(recv_msg, "joined", 6) == 0) {
-      fprintf(stdout, "Successfully joined as available peer.\n");
-    } else {
-      fprintf(stderr, "Error joining as available peer. Please try again later.\n");
+    char *recv_msg = recvMsg(tracker_socket); 
+    int numClients = recv_msg[1];
+    fprintf(stdout, "Server tells us there are %d peers.\n", numClients);
+
+    int i;
+    numPeers = 0;
+    for (i = 0; i < numClients; i++) {
+      recv_msg = recvMsg(tracker_socket);
+      if (recv_msg[0] == 16) {
+        char *ip = recv_msg + 1;
+        fprintf(stdout, "Received peer: %s\n", ip);
+        peers[numPeers] = ip; // Store received ips in array
+        numPeers++;
+      }
     }
     free(recv_msg);
   }
+
+  fprintf(stdout, "Peer List:\n");
+
+  int i;
+  for (i = 0; i < numPeers; i++) {
+    fprintf(stdout, " - %s\n", peers[i]);
+  }
 }
 
+/*
+  Request to add our ip to the list of connected ips to be returned when the peer list is requested.
+*/
 void joinTracker(int tracker_socket) {
   if (sendMsg(tracker_socket, "join") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
+    // The confirmation of a successful join is the reception of a "joined" message
     if (strncmp(recv_msg + 1, "joined", 6) == 0) {
       fprintf(stdout, "Successfully joined as available peer.\n");
     } else {

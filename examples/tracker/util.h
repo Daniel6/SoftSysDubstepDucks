@@ -27,6 +27,7 @@
 
 char *buildMsg(char *msg);
 int sendMsg(int tracker_socket, char *msg);
+int sendData(int socket, char *data, int len);
 char *recvMsg(int tracker_socket);
 
 #endif

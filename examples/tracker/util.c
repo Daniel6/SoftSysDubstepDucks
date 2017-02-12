@@ -18,6 +18,15 @@ int sendMsg(int tracker_socket, char *msg) {
   return 0;
 }
 
+int sendData(int socket, char *data, int len) {
+  if (send(socket, data, len, MSG_NOSIGNAL) == -1) {
+    fprintf(stderr, "[Error %s] ", strerror(errno));
+    fprintf(stderr, "Error communicating with socket. Please try again later.\n");
+    return -1;
+  }
+  return 0;
+}
+
 char *recvMsg(int tracker_socket) {
   ssize_t recv_len;
   char *buffer = malloc(BUFSIZ);
