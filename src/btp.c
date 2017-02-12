@@ -140,13 +140,14 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
 
 char *construct_bitfield_message(char * bitfield, int bitfieldLen)
 {
-
     char * msg = malloc(4 + 1 + bitfieldLen);
-    int *msgLen = malloc(sizeof(int));
-    *msgLen = bitfieldLen+1;
-    memcpy(msg, msgLen, 4);
-    msg[4] = (char) BITFIELD;
-    memcpy(msg+5, bitfield, bitfieldLen);
+    int *msgLen = (int *) malloc(sizeof(int));
+//    *msgLen = bitfieldLen+5;
+//    memcpy(msg, msgLen, 4);
+ //   msg[4] = (char) BITFIELD;
+//    memcpy(msg+5, bitfield, bitfieldLen-1);
+  //  printf("%p\n", msgLen);
+   // print_hex_memory(msgLen, 4);
     free(msgLen);
     return msg;
 }
