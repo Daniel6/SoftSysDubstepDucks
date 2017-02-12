@@ -31,7 +31,9 @@ Readings completed individually:
 Project related work:
 * Set up torrent file parsing for the partition of files
 * Deconstruction and reconstruction of files
+  * [file constructor/deconstructor](https://github.com/Daniel6/SoftSysDubstepDucks/blob/file-construction/examples/file-construction/file_constructor.c)
 * Piece-peer request assigner
+  * [piece assigner code](https://github.com/Daniel6/SoftSysDubstepDucks/blob/piece-selection/piece_selection/piece_selector.c)
 * Set up tracker server and client
 
 ### Preliminary Results  
