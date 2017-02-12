@@ -44,10 +44,13 @@ void write_piece(int piece_num, int piece_len, char *buffer) {
 		return;
 	}
 
-	if (fwrite(buffer, 1, piece_len, f_write) != piece_len) {
-		puts("err fwrite");
-		return;
-	}
+	// if (fwrite(buffer, 1, piece_len, f_write) != piece_len) {
+	// 	puts("err fwrite");
+	// 	return;
+	// }
+
+	fprintf(f_write, "%s\n", buffer);
+	
 }
 
 int main(int argc, char *argv[]) {
