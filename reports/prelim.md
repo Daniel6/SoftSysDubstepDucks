@@ -37,6 +37,11 @@ Project related work:
 * Set up tracker server and client
 
 ### Preliminary Results  
+#### Segmented File Transfer
+We were able to demonstrate the interpretation and construction of protocol compliant messages excluding the PIECE message in the following image. The left side represents the server, and each line of the output corresponds to the hex representation of the messages that we want to send, with the larger block of hex at the end representing the concatenated buffer we wish to send. The right side represents the interpretation of the messages after the messages were sent. 
+
+![example](../images/segment-example.png)
+
 #### Tracker Server and Client
 The tracker server and client have established basic communications. The client is able to register itself on the tracker, and also receive a list of all other registered peers. This is enough to move forwards with although it could benefit from more robustness. Here we see an example of a client connecting and registering with the tracker, and then a new client retrieving the first client's IP from the tracker.
 
