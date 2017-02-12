@@ -42,6 +42,7 @@ The tracker server and client have established basic communications. The client 
 #### File Deconstruction and Reconstruction  
 We can extract a given “piece” (section) of a file and save it to a buffer. We can also take what is in a buffer and write it to a given file.
 In this example, we read the 1st piece (0-indexing), where pieces are 5 characters long, from text.txt and saved it to a buffer. This was the string “fghij”. We then wrote this string to the previously non-existent file write.txt. By specifying that we were writing the 1st piece where pieces are of length 5, we were able to write to the correct offset position in write.txt (the data that should be where the 0th piece is consists of 0s). As expected of most torrented files, the write.txt file should be able to work file in a typical program that reads such a file, even if some of the pieces are missing. Thus, if we open write.txt in a normal text editor (such as Mac’s TextEdit), we see that we have indeed written “fghij”.
+
 ![test.txt](../images/piece_selection_test.png)
 ![write.txt](../images/piece_selection_write.png)
 ![write.txt in TextEdit](../images/piece_selection_nice_view.png)
