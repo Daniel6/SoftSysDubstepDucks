@@ -38,7 +38,8 @@ Project related work:
 
 ### Preliminary Results  
 #### Tracker Server and Client
-The tracker server and client have established basic communications. The client is able to register itself on the tracker, and also receive a list of all other registered peers. This is enough to move forwards with although it could benefit from more robustness.  
+The tracker server and client have established basic communications. The client is able to register itself on the tracker, and also receive a list of all other registered peers. This is enough to move forwards with although it could benefit from more robustness. Here we see an example of a client connecting and registering with the tracker, and then a new client retrieving the first client's IP from the tracker.
+
 ![example](../images/tracker-example.png)
 
 #### File Deconstruction and Reconstruction  
