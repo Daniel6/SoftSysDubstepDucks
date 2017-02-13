@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -18,6 +19,9 @@
 #include <openssl/sha.h>
 #include <byteswap.h>
 #include <poll.h>
+
+#include "bencode.c"
+#include "bencode.h"
 
 //Defining bool types.
 #define TRUE 0
@@ -91,5 +95,9 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
+
+
+
+
 
 #endif //BTP_H_

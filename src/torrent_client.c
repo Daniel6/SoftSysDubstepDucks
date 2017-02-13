@@ -1,4 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <stddef.h>
+
 #include "btp.h"
+
 
 int main(int argc, char ** argv)
 {
@@ -6,6 +13,10 @@ int main(int argc, char ** argv)
 	struct connection_info connections[10];
 	struct sockaddr_in peer[MAX_PEERS];
 	struct pollfd fds[MAX_CONNECTIONS];
+
+
+
+
 
 	memset(fds, 0 , sizeof(fds));
 
@@ -21,7 +32,9 @@ int main(int argc, char ** argv)
 	int own_port = LISTENER_PORT_NUMBER;
 	//Parse torrent file. 
 
-	//
+	char target[] = "62-Q2.mp3.torrent";
+	char length[80];
+	bt_info_t *ans =  decodeFile(target);
 
 	//Parse tracker info
 
