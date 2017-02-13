@@ -81,18 +81,27 @@ void *handler(void *arguments) {
   fprintf(stdout, "Client %s connected.\n", ip);
 
   // TODO: iterate upon this to support the execution of multiple commands before closing the connection.
-  char *recv_msg = recvMsg(client_socket);
-  if (strncmp(recv_msg + 1, "join", 4) == 0) {
-    // Execute the "join" command
-    fprintf(stdout, "Client %s is joining the peer list.\n", ip);
-    if (addClient(ip) == 0) {
-      sendMsg(client_socket, "joined");
-    } else {
-      sendMsg(client_socket, "failed to join");
+  char *recv_msg;
+  while (1) {
+    recv_msg = recvMsg(client_socket);
+    // If we read a 0 from the socket, the socket has been closed on the client side.
+    if (recv_msg[0] == 0) {
+      fprintf(stdout, "Detected client %s shutdown.\n", ip);
+      break;
     }
-  } else if (strncmp(recv_msg + 1, "list", 4) == 0) {
-    // Execute the "list" command
-    sendClients(client_socket);
+
+    if (strncmp(recv_msg + 1, "join", 4) == 0) {
+      // Execute the "join" command
+      fprintf(stdout, "Client %s is joining the peer list.\n", ip);
+      if (addClient(ip) == 0) {
+        sendMsg(client_socket, "joined");
+      } else {
+        sendMsg(client_socket, "failed to join");
+      }
+    } else if (strncmp(recv_msg + 1, "list", 4) == 0) {
+      // Execute the "list" command
+      sendClients(client_socket);
+    }
   }
   free(recv_msg);
   close(client_socket);
@@ -124,16 +133,16 @@ void sendClients(int socket) {
     return;
   }
 
-  // Send each ip of each client
+  // Bundle all client ip's into one message
+  data = malloc(1 + (16 * numClients));
+  dl = 16 * numClients;
+
+
   int i;
   for (i = 0; i < numClients; i++) {
-    data = (char *)calloc(17, sizeof(char));
-    dl = 16;
-    memcpy(data, &dl, 1);
-    memcpy(data + 1, clients[i], 16);
-    fprintf(stdout, "Sending peer: %s\n", data + 1);
-    if (sendData(socket, data, 17) < 0) {
-      break;
-    }
+    fprintf(stdout, "Copying: %s\n", clients[i]);
+    memcpy((data + 1) + (16 * i), clients[i], 16);
   }
+
+  fprintf(stdout, "Done sending.\n");
 }

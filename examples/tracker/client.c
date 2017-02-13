@@ -73,7 +73,11 @@ void requestPeers(int tracker_socket) {
     numPeers = 0;
     for (i = 0; i < numClients; i++) {
       recv_msg = recvMsg(tracker_socket);
-      if (recv_msg[0] == 16) {
+      sendMsg(tracker_socket, "ready");
+      if (recv_msg[0] == 0) {
+        fprintf(stdout, "Tracker socket closed unexpectedly, exiting.\n");
+        return;
+      } else if (recv_msg[0] == 16) {
         char *ip = recv_msg + 1;
         fprintf(stdout, "Received peer: %s\n", ip);
         peers[numPeers] = ip; // Store received ips in array
@@ -98,6 +102,7 @@ void joinTracker(int tracker_socket) {
   if (sendMsg(tracker_socket, "join") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
     // The confirmation of a successful join is the reception of a "joined" message
+    fprintf(stdout, "Received message of length: %d\n", recv_msg[0]);
     if (strncmp(recv_msg + 1, "joined", 6) == 0) {
       fprintf(stdout, "Successfully joined as available peer.\n");
     } else {
