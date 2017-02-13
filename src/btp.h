@@ -64,6 +64,15 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 #define SERVER_ADDRESS  "127.0.0.1"
 #define FILE_TO_SEND    "testfile.txt"
 
+// your current piece statuses
+#define NOT_REQUESTED = 0
+#define REQUESTED = 1
+#define HAVE = 2
+
+typedef struct node {
+    int val;
+    struct node *next;
+} Node;
 
 struct connection_info{
 	char ownInterested;
@@ -73,9 +82,6 @@ struct connection_info{
 	char * peerBitfield;
 	int sent_request;
 };
-
-
-
 
 #include "btp.c"
 
@@ -96,8 +102,52 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
 
+// piece selection functions
+
+/* Makes a new Linked List node structure.
+ *  
+ * val: value to store in the node.
+ * next: pointer to the next node
+ * 
+ * returns: pointer to a new node
+ */
+Node *make_node(int val, Node *next);
+
+/*
+ * Returns the value of a Node.
+ * 
+ * node: node to get value from
+ *
+ * returns: int that is the value of node
+ */
+int get_val(Node *node);
 
 
+/*
+ * Given a peer's bitfield and an array of client's (your) current piece statuses,
+ * return the first piece the peer has that you have not requested.
+ *
+ * peer_bitfield: array containing bits representing if the peer has a piece
+ * pieces: client's current request/have statuses of pieces
+ *
+ * returns: piece number that should be requested from peer
+ */
+int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces);
+
+
+/*
+ * Determine what pieces should be requested from which peers
+ *
+ * connections: a list of peer connections
+ * num_connections: total number of connections
+ pieces: array of current piece statuses
+ * num_pieces: total number of pieces:
+ *
+ * returns: head of a Linked List, where value is piece number
+ * 	        and the order of the nodes is the order of the peers
+ * 	        in connections
+ */
+Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces);
 
 
 #endif //BTP_H_

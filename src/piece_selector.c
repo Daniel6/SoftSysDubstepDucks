@@ -86,12 +86,14 @@ int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces) {
  *
  * connections: a list of peer connections
  * num_connections: total number of connections
+ * pieces: array of current piece statuses
+ * num_pieces: total number of pieces:
  *
  * returns: head of a Linked List, where value is piece number
  * 	        and the order of the nodes is the order of the peers
  * 	        in connections
  */
-Node *assign_pieces(struct connection_info *connections, int num_connections) {
+Node *assign_pieces(struct connection_info *connections, int num_connections, int *piece_statuses[], int num_pieces) {
 	Node *head = make_node(-1, NULL);
 	Node *curr = head;
 
@@ -99,7 +101,7 @@ Node *assign_pieces(struct connection_info *connections, int num_connections) {
 	for (int i = 0; i < num_connections; i++) {
 		// set value of ith node to piece number that 
 		// should be requested from ith peer connection
-		curr->val = get_piece(connections[i].peerBitfield, piece_statuses, num_pieces);
+		curr->val = get_piece(connections[i].peerBitfield, *piece_statuses, num_pieces);
 
 		if (i != num_connections - 1) {
 			// don't make a new next node if
