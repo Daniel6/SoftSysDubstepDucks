@@ -108,7 +108,8 @@ int main(int argc, char ** argv)
 			fprintf(stderr, "Error on send --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-
+		printf("connected\n");
+		
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
 
