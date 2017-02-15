@@ -65,24 +65,16 @@ int main() {
 */
 void requestPeers(int tracker_socket) {
   if (sendMsg(tracker_socket, "list") == 0) {
-    char *recv_msg = recvMsg(tracker_socket); 
-    int numClients = recv_msg[1];
-    fprintf(stdout, "Server tells us there are %d peers.\n", numClients);
-
+    char *recv_msg = recvMsg(tracker_socket);
+    fprintf(stdout, "Sizeof data: %d\n", recv_msg[0]);
+    int numClients = recv_msg[0];
     int i;
     numPeers = 0;
     for (i = 0; i < numClients; i++) {
-      recv_msg = recvMsg(tracker_socket);
-      sendMsg(tracker_socket, "ready");
-      if (recv_msg[0] == 0) {
-        fprintf(stdout, "Tracker socket closed unexpectedly, exiting.\n");
-        return;
-      } else if (recv_msg[0] == 16) {
-        char *ip = recv_msg + 1;
-        fprintf(stdout, "Received peer: %s\n", ip);
-        peers[numPeers] = ip; // Store received ips in array
-        numPeers++;
-      }
+      char *peer = malloc(16);
+      memcpy(peer, &recv_msg[1 + (16 * i)], 16);
+      peers[i] = peer;
+      numPeers++;
     }
     free(recv_msg);
   }

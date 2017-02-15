@@ -125,17 +125,18 @@ int addClient(char *ip) {
 
 void sendClients(int socket) {
   // Send number of clients
-  char *data = malloc(2);
-  int dl = 1;
-  memcpy(data, &dl, 1);
-  memcpy(data + 1, &numClients, 1);
-  if (sendData(socket, data, 2) < 0) {
-    return;
-  }
+  // char *data = malloc(2);
+  // int dl = 1;
+  // memcpy(data, &dl, 1);
+  // memcpy(data + 1, &numClients, 1);
+  // if (sendData(socket, data, 2) < 0) {
+  //   return;
+  // }
 
   // Bundle all client ip's into one message
-  data = malloc(1 + (16 * numClients));
-  dl = 16 * numClients;
+  char *data = malloc(1 + (16 * numClients));
+  memcpy(data, &numClients, 1);
+  int dl = 16 * numClients;
 
 
   int i;
@@ -143,6 +144,8 @@ void sendClients(int socket) {
     fprintf(stdout, "Copying: %s\n", clients[i]);
     memcpy((data + 1) + (16 * i), clients[i], 16);
   }
+
+  sendData(socket, data, dl);
 
   fprintf(stdout, "Done sending.\n");
 }

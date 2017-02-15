@@ -20,7 +20,7 @@
 
 #include "util.c"
 
-#define TRACKER_IP "127.0.0.1"
+#define TRACKER_IP "10.7.88.11"
 #define TRACKER_PORT 30000
 #define PORT 30000
 #define MAXCLIENTS 30
