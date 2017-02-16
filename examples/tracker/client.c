@@ -14,16 +14,21 @@ char *peers[255];
 int numPeers;
 
 int main() {
-  fprintf(stdout, "Torrent Client Initializing.\nControls:\n    'j' to join\n    'l' to get peers\n    'e' to exit\n");
+  fprintf(stdout, "Torrent Client Initializing.\n");
+  fprintf(stdout, "Enter tracker IP (if hosting locally leave blank): \n");
   char *line = NULL;
+  char *tracker_ip;
   size_t len = 0;
   ssize_t line_length;
   struct sockaddr_in tracker_addr;
+  if ((line_length = getline(&line, &len, stdin)) != -1) {
+    memcpy(tracker_ip, line, line_length);
+  }
 
   tracker_addr.sin_family = AF_INET;
-  tracker_addr.sin_port = htons(TRACKER_PORT);
+  tracker_addr.sin_port = htons(PORT);
 
-  inet_pton(AF_INET, TRACKER_IP, &(tracker_addr.sin_addr));
+  inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
   int tracker_socket = socket(AF_INET, SOCK_STREAM, 0);
 
   if (tracker_socket < 0) {
@@ -36,6 +41,14 @@ int main() {
     fprintf(stderr, "Error connecting to tracker.\n");
     exit(1);
   }
+
+  if (strlen(tracker_ip) <= 1) {
+    fprintf(stdout, "Connected to local tracker.\n");
+  } else {
+    fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
+  }
+
+  fprintf(stdout, "Controls:\n    'j' to join\n    'l' to get peers\n    'e' to exit\n");
 
   // Listen for commands
   while ((line_length = getline(&line, &len, stdin)) != -1) {
