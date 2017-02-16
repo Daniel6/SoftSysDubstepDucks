@@ -7,6 +7,7 @@
 
 #include "util.h"
 
+void execTorrent(int tracker_socket);
 void joinTracker(int tracker_socket);
 void requestPeers(int tracker_socket);
 
@@ -48,7 +49,7 @@ int main() {
     fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
   }
 
-  fprintf(stdout, "Controls:\n    'j' to join\n    'l' to get peers\n    'e' to exit\n");
+  fprintf(stdout, "Controls:\n    'j' to join\n    'l' to get peers\n    'e' to exit\n    'r' to request file\n");
 
   // Listen for commands
   while ((line_length = getline(&line, &len, stdin)) != -1) {
@@ -56,11 +57,11 @@ int main() {
       fprintf(stdout, "Exiting.\n");
       return 0;
     } else if (strncmp(line, "j", 1) == 0) {
-      fprintf(stdout, "Registering as available peer...\n");
       joinTracker(tracker_socket);
     } else if (strncmp(line, "l", 1) == 0) {
-      fprintf(stdout, "Requesting peer list...\n");
       requestPeers(tracker_socket);
+    } else if (strncmp(line, "r", 1) == 0) {
+      execTorrent(tracker_socket);
     }
   }
 
@@ -71,12 +72,23 @@ int main() {
 }
 
 /*
+  Get the most up-to-date peer list from the tracker (if possible).
+  Execute torrent code to download a file from the peers.
+*/
+void execTorrent(int tracker_socket) {
+  requestPeers(tracker_socket);
+  fprintf(stdout, "Requesting file from peers...\n");
+  // TODO: exec Thuc's torrent code
+}
+
+/*
   Request that the tracker server send all ips of other clients which have "joined"
   The response comes in many parts.
   The first part details how many ips will be sent, and by extension how many more messages are coming.
   Each extra message contains 1 ip.
 */
 void requestPeers(int tracker_socket) {
+  fprintf(stdout, "Requesting peer list...\n");
   if (sendMsg(tracker_socket, "list") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
     fprintf(stdout, "Sizeof data: %d\n", recv_msg[0]);
@@ -104,6 +116,7 @@ void requestPeers(int tracker_socket) {
   Request to add our ip to the list of connected ips to be returned when the peer list is requested.
 */
 void joinTracker(int tracker_socket) {
+  fprintf(stdout, "Registering as available peer...\n");
   if (sendMsg(tracker_socket, "join") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
     // The confirmation of a successful join is the reception of a "joined" message

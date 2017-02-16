@@ -124,20 +124,10 @@ int addClient(char *ip) {
 }
 
 void sendClients(int socket) {
-  // Send number of clients
-  // char *data = malloc(2);
-  // int dl = 1;
-  // memcpy(data, &dl, 1);
-  // memcpy(data + 1, &numClients, 1);
-  // if (sendData(socket, data, 2) < 0) {
-  //   return;
-  // }
-
   // Bundle all client ip's into one message
   char *data = malloc(1 + (16 * numClients));
   memcpy(data, &numClients, 1);
   int dl = 16 * numClients;
-
 
   int i;
   for (i = 0; i < numClients; i++) {
