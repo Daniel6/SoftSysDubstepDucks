@@ -100,6 +100,7 @@ void *handler(void *arguments) {
       }
     } else if (strncmp(recv_msg + 1, "list", 4) == 0) {
       // Execute the "list" command
+      addClient(ip);
       sendClients(client_socket);
     }
   }
