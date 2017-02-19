@@ -18,9 +18,7 @@ void send_clients(int connect_d);
 void add_client(char *ip);
 void* handler(void *arg);
 
-typedef int bool;
-#define true 1
-#define false 0
+#define PORT 30000;
 
 int listener_d = 0;
 
@@ -96,16 +94,13 @@ int main(int argc, char *argv[]) {
   if (catch_signal(SIGINT, handle_shutdown) == -1)
     error("Setting interrupt handler");
 
-  int port = 30000;
   listener_d = open_listener_socket();
-  bind_to_port(listener_d, port);
+  bind_to_port(listener_d, PORT);
   
   if (listen(listener_d, 10) == -1)
     error("Can't listen");
 
-  printf("Waiting for connection on port %d\n", port);
-
-  char buf[2];
+  printf("Waiting for connection on port %d\n", PORT);
 
   static struct sockaddr_storage client_address;
   static unsigned int address_size = sizeof(client_address);
@@ -113,29 +108,75 @@ int main(int argc, char *argv[]) {
   int client_socket;
   pthread_t client_thread_id;
   while ((client_socket = accept(listener_d, (struct sockaddr *)&client_address, &address_size)) != -1) {
+    // Spawn new thread to handle each incoming connection
     struct handler_args args;
     args.socket_filedef = client_socket;
     args.ip = inet_ntoa(((struct sockaddr_in *)&client_address)->sin_addr);
     pthread_create(&client_thread_id, NULL, handler, (void *)&args);
   }
-  // if ((s = accept(listener_d, (struct sockaddr *)&client_address, &address_size)) == -1)
-  //   error("Can't open client socket");
-    
-
-  // char *ip = inet_ntoa(((struct sockaddr_in *)&client_address)->sin_addr);
-
-  // struct client_socket sock;
-  // sock.file_descriptor = s;
-  // sock.ip = ip;
-  // return sock;
-
-  // connect_d = sock.file_descriptor;
-  // char *ip = sock.ip;
-
 
   return 0;
 }
 
+/*
+  Read input over network socket and return a pointer to a char array containing the
+  message. Input is expected to have a leading byte representing the length of the message
+  and to be no longer than 9 bytes total (including leading byte).
+*/
+char *read_in(int socket) {
+  char *temp_buf = malloc(9);
+  int data_length = recv(socket, temp_buf, size, 0);
+  int msg_length = buf[0];
+  char *buf = malloc(msg_length);
+  if (data_length - msg_length > 0 && msg_length <= bufsize) {
+    memcpy(buf, temp_buf + 1, 1);
+  }
+  free(temp_buf);
+
+  return buf;
+
+  // FILE *fp = fdopen(socket, "r");
+  // int i = 0;
+  // int ch;
+  // // Eat leading whitespaces
+  // while (isspace(ch = fgetc(fp)) && ch != EOF);
+  // if (ferror(fp))
+  //   error("fgetc");
+
+  // while (ch != '\n' && ch != EOF) {
+  //   if (i < size) {
+  //     buf[i] = (char) ch;
+  //     i++;
+  //   }
+  //   ch = fgetc(fp);
+  // }
+  // if (ferror(fp))
+  //   error("fgetc");
+
+  // /* terminate the string, eating any trailing whitespace */
+  // while (isspace(buf[--i])) {
+  //   buf[i] = '\0';
+  // }
+}
+
+/*
+  Check if client is connected to socket.
+  Returns 1 if client is connected, 0 if not.
+*/
+int is_connected(int socket) {
+  char *buf = malloc(2);
+  int readval = read(socket, buf, sizeof(buf) - 1);
+  free(buf);
+  if (readval == 0) {
+    return 0;
+  }
+  return 1;
+}
+
+/* 
+  Handle a client connection. Read data sent by client and close the socket
+  if the client becomes unresponsive.
+*/
 void *handler(void *arguments) {
   struct handler_args *args = arguments;
   int client_socket = args->socket_filedef;
@@ -144,39 +185,25 @@ void *handler(void *arguments) {
   if (say(client_socket, "Torrent Tracker\n") == -1) {
     close(client_socket);
   } else {
-    char buf[16];
-    FILE *fp = fdopen(client_socket, "r");
-    int i = 0;
-    int ch;
-    while (isspace(ch = fgetc(fp)) && ch != EOF);
-    if (ferror(fp))
-      error("fgetc");
-    while (ch != '\n' && ch != EOF) {
-      if (i < sizeof(buf)) {
-        fprintf(stdout, "%d\n", i);
-        i++;
-         fprintf(stdout, "%c\n", ch);
-        // buf[i++] = ch;
+    if (is_connected(client_socket)) {
+      char *buf = read_in(client_socket);
+
+      int i;
+      for (i = 0; i < sizeof(*buf); i++) {
+        fprintf(stdout, "%c\n", buf[i]);
       }
-      ch = fgetc(fp);
+
+      fprintf(stdout, "Data length: %d\n", sizeof(*buf));
+      if (sizeof(*buf) == 1) {
+        if ((char)buf[0] == 'j') {
+          fprintf(stdout, "First char: %c\n", buf[0]);
+        }
+      }
+    } else {
+      fprintf(stdout, "Client %s disconnected\n", ip);
+      close(client_socket);
     }
-    // if (ferror(fp))
-    //   error("fgetc");
-  
-    /* terminate the string, eating any trailing whitespace */
-    // while (isspace(buf[--i])) {
-      // buf[i] = '\0';
-    // }
   }
-
-  // read_in(client_socket, &buf, sizeof(buf));
-  // fprintf(stdout, "%s\n", buf[0]); // SEGFAULT
-  // if (strlen(buf) == 1) {
-  //   if (buf[0] == 'j') {
-  //     fprintf(stdout, "Client join: %s\n");
-  //   }
-  // }
-
 }
 
 void send_clients(int connect_d) {
