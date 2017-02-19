@@ -425,7 +425,7 @@ int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces) {
  *          and the order of the nodes is the order of the peers
  *          in connections
  */
-Node *assign_pieces(struct connection_info *connections, int num_connections) {
+Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces) {
     Node *head = make_node(-1, NULL);
     Node *curr = head;
 

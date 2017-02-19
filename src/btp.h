@@ -103,8 +103,9 @@ void print_bits ( void* buf, size_t size_in_bytes );
 Node *make_node(int val, Node *next);
 int get_val(Node *node);
 int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces);
-Node *assign_pieces(struct connection_info *connections, int num_connections);
+Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces);
 char *get_piece_from_file(int fd, int piece_num, int piece_len);
 void write_piece(int fd, int piece_num, int piece_len, char *buffer);
+
 
 #endif //BTP_H_

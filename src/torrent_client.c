@@ -256,7 +256,9 @@ int main(int argc, char ** argv)
 
             //Deal w/ every otheer one. 
             for (int i = 1; i < peers_to_connect_to; i++) {
-
+                if (fds[i].revents & POLLIN) {
+                    // recv(connections[i])
+                }
             }
 
 
