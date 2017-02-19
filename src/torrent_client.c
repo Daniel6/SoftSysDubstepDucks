@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 #include "btp.h"
-
+#include "tracker.h"
 
 int main(int argc, char ** argv)
 {
@@ -37,7 +37,9 @@ int main(int argc, char ** argv)
 	bt_info_t *ans =  decodeFile(target);
 
 	//Parse tracker info
-
+	// char *tracker_ip = "127.0.0.1";
+	char *tracker_ip = malloc(16);
+	memcpy(tracker_ip, ans->announce, 16);
 	//
 
 	//	char * announce = "127.0.0.1 8000";
@@ -75,9 +77,37 @@ int main(int argc, char ** argv)
 	//file descriptors and such. 
 
 
+	//===============================================================================================
 	//Tracker interaction here: Assumptino of some kind of char array list 
+	struct sockaddr_in tracker_addr;
+	tracker_addr.sin_family = AF_INET;
+  tracker_addr.sin_port = htons(TRACKER_PORT);
+  inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
+
+  int tracker_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (tracker_socket < 0) {
+    fprintf(stderr, "Error creating socket: error %d\n", tracker_socket);
+    exit(1);
+  }
+
+  if (connect(tracker_socket, (struct sockaddr *)&tracker_addr, sizeof(struct sockaddr)) == -1) {
+    fprintf(stderr, "[Error %s] ", strerror(errno));
+    fprintf(stderr, "Error connecting to tracker.\n");
+    exit(1);
+  }
+
+  if (strlen(tracker_ip) <= 1) {
+    fprintf(stdout, "Connected to local tracker.\n");
+  } else {
+    fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
+  }
+
+	char *peers;
+	int *num_of_peers = 0;
+  requestPeers(tracker_socket, &peers, &num_of_peers);
 	//returned for each IP + total number of peers
-	int num_of_peers = 2;
+  //================================================================================================
 
 	//Need array lol
 	int port_number = LISTENER_PORT_NUMBER;
