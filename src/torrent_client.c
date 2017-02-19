@@ -104,23 +104,27 @@ int main(int argc, char ** argv)
     fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
   }
 
-	char *peer_buf;
-	int *num_of_peers = 0;
-  requestPeers(tracker_socket, peer_buf, &num_of_peers);
-  printf("Done with tracker stuff\n");
+	char *peer_buf = calloc(MAX_PEERS,sizeof(char)*16);
+	int *num_of_peers=calloc(1, sizeof(int));
+	*num_of_peers = 0;
 
+  requestPeers(tracker_socket, peer_buf, num_of_peers);
+  printf("Done with tracker stuff\n");
+  printf("%d\n", *num_of_peers);
+  printf("%d\n", (*num_of_peers)*16);
+//  print_hex_memory(peer_buf, (*num_of_peers)*10);
   int j;
-  char peers [MAX_PEERS][16];
-  for (j = 0; j < num_of_peers; j++) {
-  	memcpy(peers+j, peer_buf + (16 * j), 16);
-  	print_hex_memory(peer_buf + (16 * j), 16);
+  char *peers [MAX_PEERS];
+  for (j = 0; j < *num_of_peers; j++) {
+   	peers[j] = malloc(16);
+  	memcpy(peers[j], peer_buf + (16 * j), 16);
   }
 
-  for (j = 0; j < num_of_peers; j++) {
+  for (j = 0; j < *num_of_peers; j++) {
   	printf("Peer %d: %s\n", j, peers[j]);	
   }
 
-  printf("Num peers: %d\n", num_of_peers);
+  printf("Num peers: %d\n", *num_of_peers);
 
 	//returned for each IP + total number of peers
   //================================================================================================
