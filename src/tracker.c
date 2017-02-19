@@ -4,6 +4,16 @@
 
 #include "tracker.h"
 
+void pprint_hex_memory(void *mem, int size) {
+  int i;
+  unsigned char *p = (unsigned char *)mem;
+  for (i=0;i<size;i++) {
+    printf("0x%02x ", p[i]);
+  }
+  printf("\n");
+}
+
+
 /*
   Request that the tracker server send all ips of other clients which have "joined"
   The response comes in many parts.
@@ -14,9 +24,11 @@ void requestPeers(int tracker_socket, char *peers, int *numPeers) {
   fprintf(stdout, "Requesting peer list...\n");
   if (sendMsg(tracker_socket, "list") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
+
     fprintf(stdout, "Sizeof data: %d\n", recv_msg[0]);
     memcpy(numPeers, recv_msg, 1);
-    memcpy(peers, recv_msg + 1, recv_msg[0] * 16);
+    peers = malloc(*numPeers*16);
+    memcpy(peers, recv_msg + 1, *numPeers*16);
     free(recv_msg);
   }
   

@@ -37,7 +37,8 @@ int main(int argc, char ** argv)
 	// bt_info_t *ans =  decodeFile(target);
 
 	//Parse tracker info
-	 char *tracker_ip = "127.0.0.1";
+	 char *tracker_ip = "10.7.88.53";
+	 printf("%s\n", tracker_ip);
 	//char *tracker_ip = malloc(16);
 	//memcpy(tracker_ip, ans->announce, 16);
 	//
@@ -81,8 +82,8 @@ int main(int argc, char ** argv)
 	//Tracker interaction here: Assumptino of some kind of char array list 
 	struct sockaddr_in tracker_addr;
 	tracker_addr.sin_family = AF_INET;
-  tracker_addr.sin_port = htons(TRACKER_PORT);
-  inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
+    tracker_addr.sin_port = htons(TRACKER_PORT);
+    inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
 
   int tracker_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -111,7 +112,7 @@ int main(int argc, char ** argv)
   int j;
   char peers [MAX_PEERS][16];
   for (j = 0; j < num_of_peers; j++) {
-  	memcpy(peers[j], peer_buf + (16 * j), 16);
+  	memcpy(peers+j, peer_buf + (16 * j), 16);
   	print_hex_memory(peer_buf + (16 * j), 16);
   }
 
