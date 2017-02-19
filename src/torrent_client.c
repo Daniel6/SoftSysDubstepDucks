@@ -34,12 +34,12 @@ int main(int argc, char ** argv)
 
 	char target[] = "62-Q2.mp3.torrent";
 	char length[80];
-	bt_info_t *ans =  decodeFile(target);
+	// bt_info_t *ans =  decodeFile(target);
 
 	//Parse tracker info
-	// char *tracker_ip = "127.0.0.1";
-	char *tracker_ip = malloc(16);
-	memcpy(tracker_ip, ans->announce, 16);
+	 char *tracker_ip = "127.0.0.1";
+	//char *tracker_ip = malloc(16);
+	//memcpy(tracker_ip, ans->announce, 16);
 	//
 
 	//	char * announce = "127.0.0.1 8000";
@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
 	//Output should probablybe some kind of way of dealing w/ a file 
 	//file descriptors and such. 
 
-
+	printf("Starting tracker stuff\n");
 	//===============================================================================================
 	//Tracker interaction here: Assumptino of some kind of char array list 
 	struct sockaddr_in tracker_addr;
@@ -103,9 +103,24 @@ int main(int argc, char ** argv)
     fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
   }
 
-	char *peers;
+	char *peer_buf;
 	int *num_of_peers = 0;
-  requestPeers(tracker_socket, &peers, &num_of_peers);
+  requestPeers(tracker_socket, peer_buf, &num_of_peers);
+  printf("Done with tracker stuff\n");
+
+  int j;
+  char peers [MAX_PEERS][16];
+  for (j = 0; j < num_of_peers; j++) {
+  	memcpy(peers[j], peer_buf + (16 * j), 16);
+  	print_hex_memory(peer_buf + (16 * j), 16);
+  }
+
+  for (j = 0; j < num_of_peers; j++) {
+  	printf("Peer %d: %s\n", j, peers[j]);	
+  }
+
+  printf("Num peers: %d\n", num_of_peers);
+
 	//returned for each IP + total number of peers
   //================================================================================================
 

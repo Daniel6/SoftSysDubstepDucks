@@ -15,24 +15,12 @@ void requestPeers(int tracker_socket, char *peers, int *numPeers) {
   if (sendMsg(tracker_socket, "list") == 0) {
     char *recv_msg = recvMsg(tracker_socket);
     fprintf(stdout, "Sizeof data: %d\n", recv_msg[0]);
-    int numClients = recv_msg[0];
-    int i;
-    *numPeers = 0;
-    for (i = 0; i < numClients; i++) {
-      char *peer = malloc(16);
-      memcpy(peer, &recv_msg[1 + (16 * i)], 16);
-      memcpy(peers + i, peer, 16);
-      (*numPeers)++;
-    }
+    memcpy(numPeers, recv_msg, 1);
+    memcpy(peers, recv_msg + 1, recv_msg[0] * 16);
     free(recv_msg);
   }
-
-  fprintf(stdout, "Peer List:\n");
-
-  int i;
-  for (i = 0; i < *numPeers; i++) {
-    fprintf(stdout, " - %s\n", peers[i]);
-  }
+  
+  printf("numPeers: %d\n", *numPeers);
 }
 
 /*
