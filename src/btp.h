@@ -74,6 +74,11 @@ struct connection_info{
 	int sent_request;
 };
 
+typedef struct node {
+    int val;
+    struct node *next;
+} Node;
+
 
 
 
@@ -95,9 +100,11 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
-
-
-
-
+Node *make_node(int val, Node *next);
+int get_val(Node *node);
+int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces);
+Node *assign_pieces(struct connection_info *connections, int num_connections);
+char *get_piece_from_file(int fd, int piece_num, int piece_len);
+void write_piece(int fd, int piece_num, int piece_len, char *buffer);
 
 #endif //BTP_H_

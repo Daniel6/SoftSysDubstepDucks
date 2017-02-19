@@ -316,4 +316,134 @@ void initialize_connection(struct connection_info* connection_to_initialize, int
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }
 
+/*
+ * Get a piece from a file
+ *
+ * fd: file descriptor
+ * piece_num: which piece to get from the file (0 indexed)
+ * piece_len: length of pieces
+ *
+ * returns: char array of the piece data
+ */
+char *get_piece_from_file(int fd, int piece_num, int piece_len) {
+
+    char buffer[piece_len];
+    // seek to correct position in the file
+    if (lseek(fd, piece_num * piece_len, SEEK_SET) < 0){
+        // error seeking
+        exit(-1);
+    }
+
+    // read from file into buffer
+    if (read(fd, buffer, piece_len) != piece_len) {
+        exit(-1);
+    }
+
+    printf("%s\n", buffer);
+    //char *piece = (char *) mallloc(sizeof(char) * piece_len);
+    return strcpy(malloc(sizeof(char) * piece_len), buffer);
+    //return piece;
+}
+
+/*
+ * Write to a file from a buffer
+ *
+ * fd: file descriptor
+ * piece_num: what number piece will be written
+ * piece_len: length of the piece being written
+ * buffer: char array of what will be written
+ */
+void write_piece(int fd, int piece_num, int piece_len, char *buffer) {
+    // seek to correct position in the file
+    if (lseek(fd, piece_num * piece_len, SEEK_SET) < 0){
+        // error seeking
+        exit(-1);
+        return;
+    }
+
+    if (write(fd, strcat(buffer, "\n"), piece_len) != piece_len) {
+        printf("Success writing to the file!!!!!\n");
+        return;
+    }
+}
+
+/* Makes a new Linked List node structure.
+ *  
+ * val: value to store in the node.
+ * next: pointer to the next node
+ * 
+ * returns: pointer to a new node
+ */
+Node *make_node(int val, Node *next) {
+    Node *node = malloc(sizeof(Node));
+    node->val = val;
+    node->next = next;
+    return node;
+}
+
+/*
+ * Returns the value of a Node.
+ * 
+ * node: node to get value from
+ *
+ * returns: int that is the value of node
+ */
+int get_val(Node *node) {
+    return node->val;
+}
+
+/*
+ * Given a peer's bitfield and an array of client's (your) current piece statuses,
+ * return the first piece the peer has that you have not requested.
+ *
+ * peer_bitfield: array containing bits representing if the peer has a piece
+ * pieces: client's current request/have statuses of pieces
+ *
+ * returns: piece number that should be requested from peer
+ */
+int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces) {
+    for (int i = 0; i < num_pieces; i++) {
+        if (!piece_statuses[i] && peer_bitfield[i]) {
+            // if client has not yet requested the piece
+            // and the peer has the piece, request that
+            // piece
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+
+/*
+ * Determine what pieces should be requested from which peers
+ *
+ * connections: a list of peer connections
+ * num_connections: total number of connections
+ *
+ * returns: head of a Linked List, where value is piece number
+ *          and the order of the nodes is the order of the peers
+ *          in connections
+ */
+Node *assign_pieces(struct connection_info *connections, int num_connections) {
+    Node *head = make_node(-1, NULL);
+    Node *curr = head;
+
+    // assign a piece to every peer connections
+    for (int i = 0; i < num_connections; i++) {
+        // set value of ith node to piece number that 
+        // should be requested from ith peer connection
+        curr->val = get_piece(connections[i].peerBitfield, piece_statuses, num_pieces);
+
+        if (i != num_connections - 1) {
+            // don't make a new next node if
+            // this is the last connection
+            curr->next = make_node(-1, NULL);
+            *curr = *(curr->next);
+        }
+    }
+
+    return head;
+}
+
 
