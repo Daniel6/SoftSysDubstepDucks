@@ -446,4 +446,42 @@ Node *assign_pieces(struct connection_info *connections, int num_connections, in
     return head;
 }
 
+void error(char *msg) {
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(1);
+}
+
+int say(int socket, char *s) {
+    int result = send(socket, s, strlen(s), 0);
+    if (result == -1) {
+        // don't call error()
+        // don't want to stop server if there's a problem with just one client
+        fprintf(stderr, "%s: %s\n", "Error talking to the client", strerror(errno));
+    }
+    return result;
+}
+
+int read_in(int socket, char *buf, int len) {
+    char *s = buf;
+    int slen = len;
+    int c = recv(socket, s, slen, 0);
+    // keep reading until no more chars or reach '\n'
+    while ((c > 0) && (s[c-1] != '\n')) {
+        s += c;
+        slen -= c;
+        c = recv(socket, s, slen, 0);
+    }
+    if (c < 0) {
+        // in case there's an error
+        return c;
+    } else if (c == 0) {
+        // nothing read, so send an empty string
+        buf[0] = '\0';
+    } else {
+        // replace '\r' with '\0'
+        s[c-1]='\0';
+    }
+    return len - slen;
+}
+
 

@@ -159,7 +159,7 @@ int main(int argc, char ** argv) {
         struct sockaddr_in *remote_addr = &peer[i];
         int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, ip, port_number);
         fds[i+1].fd = client_socket;
-        fds[i+1].events = POLLIN | POLLOUT;
+        fds[i+1].events = POLLIN|POLLOUT;
 
         initialize_connection(&connections[i], total_pieces_in_file);
 
@@ -170,75 +170,87 @@ int main(int argc, char ** argv) {
         }
 
         printf("connected\n");
-
-        // send your handshake
-        if (send(client_socket, own_handshake, FULLHANDSHAKELENGTH, 0) == -1) {
+        if(send(client_socket, own_handshake, FULLHANDSHAKELENGTH,0)==-1){
             fprintf(stderr, "Error on send --> %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
         printf("connected\n");
         
-        // get back peer's handshake
-        uint32_t received_bytes = 0;
-        received_bytes = recv(client_socket, buffer, BUFSIZ, 0);
+        uint32_t recieved_bytes = 0;
+        recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
 
-        char *peer_handshake = malloc(FULLHANDSHAKELENGTH);
+        char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
         int test;
         //I really dislike the following code. 
 
-        if (received_bytes == -1) {
+        if(recieved_bytes == -1)
+        {
             fprintf(stderr, "Error on reception");
             exit(EXIT_FAILURE);
-        } else if (received_bytes == 0) {
+        }
+        else if(recieved_bytes == 0)
+        {
             fprintf(stdout, "Dropped Connection\n");
             exit(EXIT_FAILURE);
-        } else if (received_bytes == FULLHANDSHAKELENGTH) {
+        }
+        else if(recieved_bytes == FULLHANDSHAKELENGTH)
+        {
             memcpy(peer_handshake, buffer, 68);
             test = verify_handshake(peer_handshake, file_sha);
             // Testing for issues on handshake.
-            if (test) {
+            if(test)
+            {
                 fprintf(stderr, "Error on handshake ---> %d\n", test);
                 exit(EXIT_FAILURE);
             }
             memset(buffer, 0, sizeof(buffer));
             free(peer_handshake);
-        } else if (received_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength) {
-            char *bitfield_message = malloc(bitfieldMsgLength);
+        }   
+        else if( recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength)
+        {
+            char * bitfield_message = malloc(bitfieldMsgLength);
             memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
             test = verify_handshake(peer_handshake, file_sha);
             // Testing for issues on handshake.
-            if (test) {
+            if(test)
+            {
                 fprintf(stderr, "Error on handshake ---> %d\n", test);
                 exit(EXIT_FAILURE);
             }
             //If there is a bitfield option, set bitfield. 
-            memcpy(bitfield_message, buffer + FULLHANDSHAKELENGTH, bitfieldMsgLength);
+            memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
             memcpy(connections[i].peerBitfield, bitfield_message+5, total_pieces_in_file);
             memset(buffer, 0, sizeof(buffer));
-
-            if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
+            if(0<peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen))
+            {
 
                 char * interested = construct_state_message(INTERESTED);
                 connections[i].ownInterested = TRUE;
-                if (send(client_socket, interested, STATEMSGSIZE,0)==-1) {
+                if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
                     fprintf(stderr, "Error on send --> %s\n", strerror(errno));
                     exit(EXIT_FAILURE);
                 }
                 free(interested);
-            } else { 
-                char *uninterested = construct_state_message(UNINTERESTED);
-                if (send(client_socket, uninterested, STATEMSGSIZE,0)==-1) {
+            }
+            else{
+                char * uninterested = construct_state_message(UNINTERESTED);
+                if(send(client_socket, uninterested, STATEMSGSIZE,0)==-1){
                     fprintf(stderr, "Error on send --> %s\n", strerror(errno));
                     exit(EXIT_FAILURE);
                 }
                 free(uninterested); 
-            }
+                }
         //Free handshake  + memory after completion. -> Don't think we need it afterwards
             free(bitfield_message);
             free(peer_handshake);
         }  
+        
     }
 
+    // placeholder vars for when listener socket
+    // is being contacted by a client peer
+    struct sockaddr_storage client_addr;
+    unsigned int address_size = sizeof(client_addr);
 
     while (1) {
         // int rv = poll(fds, POLLIN|POLLOUT, 60*1000);
@@ -249,11 +261,63 @@ int main(int argc, char ** argv) {
         } else if (rv == 0) {
             printf("Time out occured, no response after 1 minute");
         } else {
-            // Deal w/ listener
+            // check listener: has anyone contacted you?
+            // do you need to send someone something?
+
             if (fds[0].revents & POLLIN) {
-                // if there is data, it will be a handshake
-                recv(listener_socket, buffer, BUFSIZ, 0);
-                // check if you know this person
+                int connect_d = accept(listener_socket, (struct sockaddr *)&client_addr, &address_size);
+                if (connect_d == -1) {
+                    error("Listener can't open another socket");
+                }
+                // someone is talking to me so fork it
+                if (!fork()) {
+                    // in the child
+                    // fork() returning 0 means you are in child
+                    
+                    // gotta close main listener if you're in the child
+                    // cuz child uses connect_d
+                    close(listener_socket);
+
+                    // read in the message being sent to you
+                    int bytes_received = read_in(connect_d, buffer, BUFSIZ);
+                    if (recieved_bytes == -1) {
+                        fprintf(stderr, "Error on reception");
+                        exit(EXIT_FAILURE);
+                    } else if (recieved_bytes == 0) {
+                        fprintf(stdout, "Dropped Connection\n");
+                        exit(EXIT_FAILURE);
+                    } else if(recieved_bytes == FULLHANDSHAKELENGTH) {
+                        // peer sent a handshake
+                        // gotta parse the handshake, verify, send back own handshake
+
+                        char *peer_handshake = malloc(FULLHANDSHAKELENGTH); // buffer to store
+                        int test_failed_status;
+                        memcpy(peer_handshake, buffer, 68);
+                        test_failed_status = verify_handshake(peer_handshake, file_sha); // 0 if the handshake was verified FIX THIS B/C ?!?!?!
+                        if (test_failed_status) {
+                            // handshake was bad (failed test)
+                            // so close this connection
+                            fprintf(stderr, "Error on handshake ---> %d\n", test);
+                            close(connect_d);
+                            exit(EXIT_FAILURE);
+                        } else {
+                            // their handshake was legit
+                            memset(buffer, 0, sizeof(buffer));
+                            free(peer_handshake);
+
+                            // so send back your handshake
+                            if (say(client_socket, own_handshake) != -1) {
+                                // and then send your bitfield
+                                say(client_socket, bitfield_of_current_pieces);
+                            }
+                        }
+                        
+            
+                    } else {
+                        // they sent a message from PWP
+                        // gotta respond accordingly
+
+                    }  
 
             }
 
@@ -261,7 +325,27 @@ int main(int argc, char ** argv) {
             // you are acting as client, peers are servers
             for (int i = 1; i < peers_to_connect_to; i++) {
                 if (fds[i].revents & POLLIN) {
-                    int received = recv(fds[i].fd, buffer, BUFSIZ, 0);
+                    int bytes_received = recv(fds[i].fd, buffer, BUFSIZ, 0);
+
+                    char *bufPtr = &buffer;
+                    int *msgLength = malloc(4);
+                    char *msgID = malloc(1);
+                    // buffer[bytes_received] = '\0';
+                    while (bytes_received) {
+                        if (bytes_received == EOF) {
+                            error("Can't read from server");
+                        } else if (bytes_received == 0) {
+                            fprintf(stdout, "Dropped Connection\n");
+                            exit(EXIT_FAILURE);
+                        }
+
+                    }
+
+
+
+
+
+
                 }
             }
 
