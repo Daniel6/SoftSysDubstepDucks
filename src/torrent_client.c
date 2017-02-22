@@ -37,7 +37,8 @@ int main(int argc, char ** argv)
 	// bt_info_t *ans =  decodeFile(target);
 
 	//Parse tracker info
-	 char *tracker_ip = "10.7.88.53";
+	 char *tracker_ip = "127.0.0.1";
+	 printf("Tracker IP set to: %s\n", tracker_ip);
 	 printf("%s\n", tracker_ip);
 	//char *tracker_ip = malloc(16);
 	//memcpy(tracker_ip, ans->announce, 16);

@@ -18,9 +18,10 @@
 #include <byteswap.h>
 #include <poll.h>
 
-// Trackeer server constants
+// Tracker server constants
 #define MAXCLIENTS 255
 #define TRACKER_PORT 30001
+#define IP_SIZE 16
 
 // Shared functions
 char *buildMsg(char *msg);
