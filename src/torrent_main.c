@@ -22,7 +22,6 @@ int main(int argc, char ** argv) {
     int sock_len = sizeof(struct sockaddr *);
     // Listener socket information
     int listener_socket; 
-
     struct sockaddr_in listener_addr;
 
     // For now, SERVER ADDRESS and PORT_NUMBER need to be defined 
@@ -36,15 +35,14 @@ int main(int argc, char ** argv) {
     // bt_info_t *ans =  decodeFile(target);
 
     //Parse tracker info
-     char *tracker_ip = "10.7.88.53";
-     printf("%s\n", tracker_ip);
+    char *tracker_ip = "10.7.88.53";
+    printf("%s\n", tracker_ip);
     //char *tracker_ip = malloc(16);
     //memcpy(tracker_ip, ans->announce, 16);
-    //
 
     //  char * announce = "127.0.0.1 8000";
     //  char * announce_ips = "???";
-    //  char * file_name = "testfile.txt";
+     char * file_name = "testfile.txt";
     
     int file_length = 256;
     int piece_size_bytes = 16;
@@ -70,12 +68,20 @@ int main(int argc, char ** argv) {
     //Somewhere here probably should be a way to check to see if
     //File is already there/partiall downloaded. 
     /*
-        CODE TO CHECK FOR EXISTANCE. 
+        TODO: CODE TO CHECK FOR EXISTANCE. 
         should output a bitfield w/ values that correspond to owned pieces. 
     */
     //Output should probablybe some kind of way of dealing w/ a file 
-    //file descriptors and such. 
+    //file descriptors and such.
 
+    // if the file does not exist, create it
+    int main_fd;
+    if ((main_fd = open(file_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
+        error("Error opening file to torrent");
+    }
+
+    
+    
     printf("Starting tracker stuff\n");
     //===============================================================================================
     //Tracker interaction here: Assumption of some kind of char array list 
@@ -111,18 +117,13 @@ int main(int argc, char ** argv) {
     printf("Done with tracker stuff\n");
     printf("%d\n", *num_of_peers);
     printf("%d\n", (*num_of_peers)*16);
-    //  print_hex_memory(peer_buf, (*num_of_peers)*10);
-    // int j;
+
     char *peers [MAX_PEERS];
     for (int j = 0; j < *num_of_peers; j++) {
         peers[j] = malloc(16);
         memcpy(peers[j], peer_buf + (16 * j), 16);
         printf("Peer %d: %s\n", j, peers[j]); 
     }
-
-    // for (j = 0; j < *num_of_peers; j++) {
-    //     printf("Peer %d: %s\n", j, peers[j]);   
-    // }
 
     printf("Num peers: %d\n", *num_of_peers);
 
@@ -136,7 +137,7 @@ int main(int argc, char ** argv) {
     //on last connection
     listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
     fds[0].fd = listener_socket;
-    fds[0].events = POLLIN|POLLOUT;
+    fds[0].events = POLLIN | POLLOUT;
 
 
     int peers_to_connect_to = num_of_peers;
@@ -252,6 +253,12 @@ int main(int argc, char ** argv) {
     struct sockaddr_storage client_addr;
     unsigned int address_size = sizeof(client_addr);
 
+
+    // main while loop:
+    //   forever check all of your connections until
+    //   you have downloaded the whole file or all that
+    //   is available to you and until you have served as
+    //   much of the file as you are willing to serve
     while (1) {
         // int rv = poll(fds, POLLIN|POLLOUT, 60*1000);
         int rv = poll(fds, peers_to_connect_to, 60*1000);
@@ -325,6 +332,95 @@ int main(int argc, char ** argv) {
             // you are acting as client, peers are servers
             for (int i = 1; i < peers_to_connect_to; i++) {
                 if (fds[i].revents & POLLIN) {
+
+                    int bytes_received = read_in(fds[i].fd, buffer, BUFSIZ);
+                    if (bytes_received == EOF) {
+                        error("Can't read from server");
+                    } else if (bytes_received == 0) {
+                        fprintf(stdout, "Dropped Connection\n");
+                        exit(EXIT_FAILURE);
+                    } else if (bytes_received == FULLHANDSHAKELENGTH) {
+                        // yay they responded to my handshake!
+
+                        // verify their handshake
+
+                        // if they're verified to be okay, also read in their bitfield
+                        // figure out how to respond
+                    } else {
+                        // they sent you a PWP
+                        char *bufPtr = &buffer;
+                        int *msgLength = malloc(4);
+                        char *msgID = malloc(1);
+
+                        char * msg1 = get_next_msg(bufPtr, msgID, msgSize);
+                        bufPtr += *msgSize;
+                        switch(*msgID) {
+                            case(CHOKE):
+                                connections[i].ownChoked = 1;
+                                printf("I am choked\n");
+                                break;
+                            case(UNCHOKE):
+                                connections[i].ownChoked = 0;
+                                printf("I am unchoked\n");
+                                break;
+                            case(INTERESTED):
+                                connections[i].peerInterested = 1;
+                                printf("Peer is interested\n");            
+                                break;
+                            case(UNINTERESTED):
+                                connections[i].peerInterested = 0;
+                                printf("Peer is uninterested\n");
+                                break;
+                            case(HAVE):
+                                //Reminder for the future -> write this into a function. 
+                                int *test = malloc(4);
+                                memcpy(test, msg1+5, 4);
+                                int byte_of_piece = *test/8;
+                                int bit_of_piece = *test%8;
+                                char * byte_of_interest = peerBitfield;
+                                byte_of_interest = peerBitfield + byte_of_piece ;
+                                *byte_of_interest |= 1 << (7-bit_of_piece);
+                                free(test);
+                                print_bits(peerBitfield, 2);
+
+                                printf("have tho\n");            
+                                break;
+                            case(BITFIELD):
+                                //Technically this should never happen. 
+                                memcpy(peerBitfield, msg1+5, total_pieces);
+                                printf("bitfield tho\n");
+                                break;
+                            case(REQUEST):
+
+                                // Some kind of way to put on queue this send command. 
+                                printf("request tho\n");
+                                break;              
+                            case(PIECE):
+                                // Insert saving files code here lol. + Parsing the thing + how to deal 
+                                // with blocks within a piece?
+                                write_piece(int fd, int piece_num, piece_size_bytes, char *buffer);
+
+                                printf("piece tho\n");
+                                break;
+                            case(CANCEL):
+                                // Need to cancel the queue reponse. 
+
+                                printf("cancel tho\n");
+                                break;
+                            default:
+                            ;
+                        }
+                        recieved_bytes -= *msgSize;
+                        free(msg1);          
+                    }
+
+
+
+
+
+
+
+
                     int bytes_received = recv(fds[i].fd, buffer, BUFSIZ, 0);
 
                     char *bufPtr = &buffer;
