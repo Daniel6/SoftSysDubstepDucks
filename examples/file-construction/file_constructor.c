@@ -13,6 +13,33 @@
 
 int fd_write;
 
+
+void *set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
+	// check if file exists
+	if (access(file_name, F_OK) != -1) {
+	    // file exists
+	    for (int i = 0; i < num_pieces; i++) {
+	    	// save the piece
+			char piece[piece_len] = get_piece(fd, i, piece_len);
+			unsigned char hash[SHA_DIGEST_LENGTH];
+			SHA1(piece, piece_len, hash);
+			char expected_piece_sha[SHA_DIGEST_LENGTH];
+			memcpy(expected_piece_sha, &piece_shas[i * (piece_len + 1)], piece_len);
+			if (strcmp(hash, piece_shas[i])) {
+				// add to bitfield
+			}
+		}
+
+	} else {
+		// file doesn't exist
+		// open up file for reading and writing
+		if ((fd = open(file_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
+		        error("Error opening file to torrent");
+		}
+	}
+}
+
+
 /*
  * Get a piece from a file
  *
