@@ -103,7 +103,6 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
         2. Protocol Name
         3. Info hash
 */ 
-
     unsigned char peerProtocolNameLength = (unsigned char) handshakeToVerify[0];
     //Verify name length
     if(peerProtocolNameLength - PROTOCOLNAMELENGTH)
@@ -135,7 +134,7 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
         return -3;
     }
      
-    return TRUE;
+    return 0;
 }
 
 char *construct_bitfield_message(char * bitfield, int bitfieldLen)
