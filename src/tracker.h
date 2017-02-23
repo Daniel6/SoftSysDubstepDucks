@@ -23,6 +23,12 @@
 #define TRACKER_PORT 30001
 #define IP_SIZE 16
 
+// Linked list of clients definition for tracker server
+typedef struct Client {
+  char *ip;
+  struct Client *next;
+} Client;
+
 // Shared functions
 char *buildMsg(char *msg);
 int sendMsg(int tracker_socket, char *msg);
@@ -31,6 +37,11 @@ char *recvMsg(int tracker_socket);
 // Client only functions
 void joinTracker(int tracker_socket);
 void requestPeers(int tracker_socket, char *peers, int *numPeers);
+// Server only functions
+void sendClients(int socket, Client *head, int numClients);
+void addIfAbsent(Client *head, char *ip, int *numClients);
+void destroyClientList(Client *head);
+int configureSocket();
 
 #include "tracker.c"
 #endif
