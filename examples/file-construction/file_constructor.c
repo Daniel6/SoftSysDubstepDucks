@@ -10,10 +10,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdlib.h>
+#include <openssl/sha.h>
 
 int fd_write;
 
-
+/*
 void *set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
 	// check if file exists
 	if (access(file_name, F_OK) != -1) {
@@ -38,8 +39,14 @@ void *set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int
 		}
 	}
 }
-
-
+*/
+/*
+int verify_piece(unsigned char *piece, unsigned char *expected_sha, int piece_length) {
+	unsigned char hash[SHA_DIGEST_LENGTH];
+	SHA1(piece, piece_length, hash);
+	return memcmp(hash, expected_sha, SHA_DIGEST_LENGTH);
+}
+*/
 /*
  * Get a piece from a file
  *
@@ -108,4 +115,11 @@ int main(int argc, char *argv[]) {
 	printf("%s\n", piece);
 	write_piece(fd_write, 1, 5, piece);
 
+	/*
+	unsigned char expect[SHA_DIGEST_LENGTH];
+	unsigned char *hi = "hi";
+	SHA1(hi, 2, expect);
+	int i = verify_piece(hi, expect, 2);
+	printf("%i", i);*/
+	return 0;
 }
