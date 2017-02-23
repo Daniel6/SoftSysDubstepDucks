@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 	}
 	//bufPtr has direct access to buffer. Reminder to not mess it up
 	//accidently. 
-	char * bufPtr = &buffer;
+	char * bufPtr = buffer;
 	int *  msgSize = malloc(4);
 	char * msgID = malloc(1);
 	//INTERPRET MESSAGES HERE.
