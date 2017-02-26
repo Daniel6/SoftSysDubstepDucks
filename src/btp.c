@@ -1,8 +1,9 @@
 #include "btp.h"
 
-
+//Sets up a server socket for listening. 
 int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_address, int port_number)
     {
+    //Create + test socket. 
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1) {
     fprintf(stderr, "Error creating socket --> %s", strerror(errno));
@@ -14,6 +15,7 @@ int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_addre
     server_addr_p->sin_family = AF_INET;
     inet_pton(AF_INET, server_address, &(server_addr_p->sin_addr));
     server_addr_p->sin_port = htons(port_number);
+
     /*This setting options to allow for reuse of port from other clients. 
     Basically making the port not sticky lol*/
     int reuse = 1;
@@ -36,6 +38,7 @@ int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_addre
     return server_socket;
 }
 
+//Sets up a socket to ping other clients with. 
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number){
   /* Zeroing remote_addr struct */
     memset(remote_addr, 0, sizeof(struct sockaddr_in));
@@ -59,18 +62,20 @@ int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_addres
 // Context was using it as a way to dump hex of char arrays easily.
 void print_hex_memory(void *mem, int size) {
   int i;
+  //Iterates over each byte in mem. 
   unsigned char *p = (unsigned char *)mem;
   for (i=0;i<size;i++) {
     printf("0x%02x ", p[i]);
   }
   printf("\n");
 }
+
 // Support code to print the binary representation of some memory.
 // source: http://stackoverflow.com/questions/35364772/how-to-print-memory-bits-in-c
 void print_bits ( void* buf, size_t size_in_bytes )
 {
     char* ptr = (char*)buf;
-
+    //Iterate over each bit in memory, first by byte, then by bit. 
     for (size_t i = 0; i < size_in_bytes; i++) {
         for (short j = 7; j >= 0; j--) {
             printf("%d", (ptr[i] >> j) & 1);
@@ -81,20 +86,26 @@ void print_bits ( void* buf, size_t size_in_bytes )
 }
 
 
-
+//Constructs handshake used for verification with other computers. 
 char * construct_handshake(char* hash, char* id)
 {
     //Generates a Handshake assumiing that hash and id point to 20 byte arrays 
     char * handshake = malloc(FULLHANDSHAKELENGTH);
+    //First part of handshake is name length
     memcpy(handshake, &PROTOCOLNAMELENGTH, 1);
+    //Next is the description/text for the protocol.
     memcpy(handshake+1, BTPROTOCOL, PROTOCOLNAMELENGTH);
+    //Next 8 bytes is unimplemented, but would refer to special features. 
     memset(handshake+1+PROTOCOLNAMELENGTH, 0, 8);   
+    //Copy the 20 byte sha 1 hash of the file 
     memcpy(handshake+1+PROTOCOLNAMELENGTH+8, hash, 20);
+    //Copy user id. Still need to modify this. 
     memcpy(handshake+1+PROTOCOLNAMELENGTH+20+8, id, 20);
 
     return handshake;
 }
 
+//Actual verifies if the handshake is correct. 
 int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
 {
 /* 
@@ -103,7 +114,6 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
         2. Protocol Name
         3. Info hash
 */ 
-
     unsigned char peerProtocolNameLength = (unsigned char) handshakeToVerify[0];
     //Verify name length
     if(peerProtocolNameLength - PROTOCOLNAMELENGTH)
@@ -112,7 +122,6 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
     //Verify Protocol Name is the same.
     char * peerProtocolName = malloc(PROTOCOLNAMELENGTH+1);
     memcpy(peerProtocolName, handshakeToVerify+1, PROTOCOLNAMELENGTH);
-
     if (memcmp(peerProtocolName, BTPROTOCOL,20))
     {
         free(peerProtocolName);
@@ -135,21 +144,25 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
         return -3;
     }
      
-    return TRUE;
+    return 0;
 }
 
+//Create a bitfield message, which contains a bitfield of length bitfieldLen
+//That can deal w/ the length of the object. 
 char *construct_bitfield_message(char * bitfield, int bitfieldLen)
 {
+    //allocate 4 bytes for total message size, 1 byte for status, and bitfield length
     char * msg = malloc(4 + 1 + bitfieldLen);
     int *msgLen = malloc(sizeof(int));
     *msgLen = bitfieldLen+1;
     memcpy(msg, msgLen, 4);
+    //Set status byte (4) of msg. 
     msg[4] = (char) BITFIELD;
     memcpy(msg+5, bitfield, bitfieldLen);
     free(msgLen);
     return msg;
 }
-
+//Create state msg. 
 char * construct_state_message(unsigned char msgID)
 {
     char * msg = malloc(5);
@@ -162,22 +175,22 @@ char * construct_state_message(unsigned char msgID)
 
 }
 
-
+//Count bits in your byte
 int count_char_bits(char b)
 {
     //BK's method for counting bits in a char. 
     // Works by counting the number of bits needed to have the number equal 0. 
     // Sourced from http://www.keil.com/support/docs/194.htm
- int count;
+    int count;
+    for (count = 0; b != 0; count++)
+    {
+       b &= b - 1; // this clears the LSB-most set bit
+    }
 
-for (count = 0; b != 0; count++)
-  {
-  b &= b - 1; // this clears the LSB-most set bit
-  }
-
-return count;
+    return count;
 }
 
+//Count bits in your bitfield. 
 int count_bitfield_bits(char * bitfield, int bitfieldLen)
 {
     int count = 0;
@@ -185,14 +198,13 @@ int count_bitfield_bits(char * bitfield, int bitfieldLen)
     for(x =0; x<bitfieldLen; x++)
     {
         count += count_char_bits(*(bitfield+x));
-
     }
     return count;
 
 
 }
 
-
+//Construct a have msg. 
 char * construct_have_message(int piece_index)
 {
     char * msg = malloc(9);
@@ -271,7 +283,8 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
     return msg;
 }
 
-
+//Parses the buffer for the next msg , assuming there is no corruption in the buffer. 
+//This has no error handlign right now. 
 char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
 {
 
@@ -285,6 +298,7 @@ char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
   
   return message;
 }
+
 
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_pieces)
 {
@@ -307,13 +321,31 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 
 void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_in_file)
 {
-    connection_to_initialize->ownInterested = FALSE;
-    connection_to_initialize->ownChoked = TRUE;
-    connection_to_initialize->peerInterested = FALSE;
-    connection_to_initialize->peerChoked = TRUE;
-    connection_to_initialize->sent_request = NOREQUEST;
+    //Connection status
+    char initial = 0<<7| //Connection status = 0
+                   0<<6| //ownInterested = 0
+                   1<<5| //ownChoke = 1
+                   0<<4| //peerInterested = 0
+                   1<<3| //PeerChoked = 1
+                   0<<2|; // Pending Request
+
+    connection_to_initialize->status_flags |=initial;
+    connection_to_initialize->requested_piece = -1;
+    connection_to_initialize->piece_to_send = -1;
     connection_to_initialize->peerBitfield = malloc(total_pieces_in_file/8);
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }
 
-
+void Verify_handshake(char* buffer, char * file_sha)
+{
+    int test;    
+    char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
+    memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
+    test = verify_handshake(peer_handshake, file_sha);
+    if(test){
+        fprintf(stderr, "Error on handshake ---> %d\n", test);
+        exit(EXIT_FAILURE);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    free(peer_handshake);    
+}

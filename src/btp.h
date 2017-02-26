@@ -66,12 +66,18 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 
 
 struct connection_info{
-	char ownInterested;
-	char ownChoked;
-	char peerInterested;
-	char peerChoked;
+	/*Status
+	bit 0 = connection status
+	bit 1 = ownInterested
+	bit 2 = ownChoke
+	bit 3 = peerInterested
+	bit 4 = peerChoke
+	*/
+	char status_flags;
+	int requested_piece;
+	int piece_to_send;
 	char * peerBitfield;
-	int sent_request;
+	
 };
 
 
@@ -95,8 +101,7 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
-
-
+void Verify_handshake(char* buffer, char * file_sha);
 
 
 
