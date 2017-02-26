@@ -95,8 +95,7 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
-
-
+void Verify_handshake(char* buffer, char * file_sha);
 
 
 
