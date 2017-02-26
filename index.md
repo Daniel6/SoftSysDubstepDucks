@@ -27,6 +27,7 @@ Ultimately we were unable to complete the project as originally envisioned. Howe
 <examples of working stuff here>
 
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being:
+
 * to learn about networking in C and how messages are handled on a low level
 * to learn about multiprocessing in C and managing shared resources
 * to learn how to write clean and readable C code
