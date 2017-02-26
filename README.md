@@ -28,6 +28,10 @@ Thuc Tran
 
 Andrew Pan
 
+### Additional Libraries
+
+bencode.c written by Mike Frysinger and edited by Adam Aviv
+
 
 ## License
 MIT License
