@@ -40,13 +40,22 @@ void *set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int
 	}
 }
 */
+
 /*
-int verify_piece(unsigned char *piece, unsigned char *expected_sha, int piece_length) {
+ * Verifies if string has an expected SHA has.
+ *
+ * piece[]: the string to verify
+ * expected_sha[]: the expected SHA has
+ * piece_length: the length of piece
+ *
+ * returns: 0 if the piece is not correct, 1 if the piece is verified
+ */
+int verify_piece(char piece[], unsigned char expected_sha[], int piece_length) {
 	unsigned char hash[SHA_DIGEST_LENGTH];
 	SHA1(piece, piece_length, hash);
-	return memcmp(hash, expected_sha, SHA_DIGEST_LENGTH);
+	return !memcmp(hash, expected_sha, SHA_DIGEST_LENGTH);
 }
-*/
+
 /*
  * Get a piece from a file
  *
@@ -99,27 +108,31 @@ void write_piece(int fd, int piece_num, int piece_len, char *buffer) {
 }
 
 int main(int argc, char *argv[]) {
-	int fd;
-	if ((fd = open("test.txt", O_RDONLY)) < -1) {
-		// error opening file
-		return 1;
-	}
+	// int fd;
+	// if ((fd = open("test.txt", O_RDONLY)) < -1) {
+	// 	// error opening file
+	// 	return 1;
+	// }
 	
-	int fd_write;
-	if ((fd_write = open("write.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
-		// error opening write file
-		return 1;
-	}
+	// int fd_write;
+	// if ((fd_write = open("write.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
+	// 	// error opening write file
+	// 	return 1;
+	// }
 	
-	char* piece = get_piece(fd, 1, 5);
-	printf("%s\n", piece);
-	write_piece(fd_write, 1, 5, piece);
+	// char* piece = get_piece(fd, 1, 5);
+	// printf("%s\n", piece);
+	// write_piece(fd_write, 1, 5, piece);
 
-	/*
+	
 	unsigned char expect[SHA_DIGEST_LENGTH];
-	unsigned char *hi = "hi";
-	SHA1(hi, 2, expect);
-	int i = verify_piece(hi, expect, 2);
-	printf("%i", i);*/
+	char data[] = "hi";
+	char data2[] = "yo";
+	char data3[] = "hi";
+	size_t length = sizeof(data);
+	SHA1(data, length, expect);
+	int i = verify_piece(data2, expect, length);
+	printf("%i", i);
+
 	return 0;
 }
