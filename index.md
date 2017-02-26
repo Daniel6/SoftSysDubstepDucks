@@ -24,6 +24,14 @@ The tracker server listens on a single port for incoming connections from client
 
 The data structure backing the list of clients is a singly linked list. This was chosen over an array or buffer as the array implementation had complications with memory and the buffer was inefficient for adding and removing elements. The linked list adds clients in O(1) time complexity and removes them in O(n). The array and buffer implementations were of the same average complexity, but required occasianal resizing and shifting operations, which increased their runtime.
 
+### Torrent File Creation
+
+We created torrent files following the BitTorrentSpecification, storing information in a bencoded format.  Information such as the address of the tracker server, the name of the file, and the hashes of file pieces are stored in the bencoded format after parsing and partitioning the original file, and output to a file with a .torrent extension.
+
+### Torrent File Parsing
+
+Our torrent file parsing utilizes a library created by Mike Frysinger and edited by Adam Aviv, and extracts the bencoded information from a torrent file.  The extracted information is then used to populate a struct, which can then be used by other programs to easily access torrent file information.
+
 ## Results
 Ultimately we were unable to complete the project as originally envisioned. However, we did complete many of the subcomponents that we would integrate to complete the final product. The list of working components includes the tracker server, client handshake routine, and torrent file generating process.
 
