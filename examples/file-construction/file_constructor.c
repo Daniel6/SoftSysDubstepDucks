@@ -14,35 +14,41 @@
 #include "file_constructor.h"
 
 
-// void *set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
-// 	// check if file exists
-// 	if (access(file_name, F_OK) != -1) {
-// 	    // file exists
-// 	    char expected_piece_sha[SHA_DIGEST_LENGTH];
-// 	    for (int i = 0; i < num_pieces; i++) {
-// 	    	// save the piece
-// 			char piece[piece_len] = get_piece(fd, i, piece_len);
-// 			memcpy(expected_piece_sha, &piece_shas[i * (piece_len + 1)], piece_len);
-// 			if (verify_piece(piece, expected_piece_sha, piece_len)) {
-// 				// add to bitfield
-// 				bitfield[i] = 1;
-// 			}
-// 			// unsigned char hash[SHA_DIGEST_LENGTH];
-// 			// SHA1(piece, piece_len, hash);
-// 			// char expected_piece_sha[SHA_DIGEST_LENGTH];
-// 			// if (strcmp(hash, piece_shas[i])) {
-// 			// 	// add to bitfield
-// 			// }
-// 		}
 
-// 	} else {
-// 		// file doesn't exist
-// 		// open up file for reading and writing
-// 		if ((fd = open(file_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
-// 		        fprintf(stderr, "Error opening file to torrent");
-// 		}
-// 	}
-// }
+
+void set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
+	// check if file exists
+	int bitfield_len = num_pieces / 8; // 8 is size of byte
+	memset(bitfield, 0, bitfield_len);
+	if (access(file_name, F_OK) != -1) {
+	    // file exists
+	    char expected_piece_sha[SHA_DIGEST_LENGTH];
+	    for (int i = 0; i < num_pieces; i++) {
+	    	// save the piece
+			char piece[piece_len] = get_piece(fd, i, piece_len);
+			memcpy(expected_piece_sha, &piece_shas[i * (piece_len + 1)], piece_len);
+			if (verify_piece(piece, expected_piece_sha, piece_len)) {
+				// add to bitfield
+				
+				memset(bitfield, 1, );
+				bitfield[i] = 1;
+			}
+			// unsigned char hash[SHA_DIGEST_LENGTH];
+			// SHA1(piece, piece_len, hash);
+			// char expected_piece_sha[SHA_DIGEST_LENGTH];
+			// if (strcmp(hash, piece_shas[i])) {
+			// 	// add to bitfield
+			// }
+		}
+
+	} else {
+		// file doesn't exist
+		// open up file for reading and writing
+		if ((fd = open(file_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
+		        fprintf(stderr, "Error opening file to torrent");
+		}
+	}
+}
 
 
 /*
