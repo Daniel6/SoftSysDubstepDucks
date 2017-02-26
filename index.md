@@ -13,4 +13,10 @@ This system includes a tracker server and torrent client distribution.
 
 The purpose of the tracker server is to accept torrent client communications, and relay the IP addresses of connected clients. This is done so that each torrent client may know the addresses of its peers.
 
-The torrent client is responsible for the partitioning and transfer of the desired file between itself and the other clients. Depending on the number of available clients, each client may only be responsible for trasnferring a segment of the file.
+The torrent client is responsible for the partitioning and transfer of the desired file between itself and the other clients. Depending on the number of available clients, each client may only be responsible for transferring a segment of the file.
+
+## Background
+Our project resides in well-explored territory. There are quite a few torrent clients under development, and ours does nothing new compared to those. However, the inner mechanisms for these systems are not publicised as they are proprietary. Only the messaging protocols are publicly known. Thus, knowing the format in which messages should be sent, the team wanted to explore how these messages are handled by the program. 
+
+## Implementation
+We chose to implement two major facets of a peer to peer system, a centralized tracker server, and a client that would be run on many machines. The central server's purpose is to keep track of active clients, relay this list to the clients, and serve the torrent metadata file to the clients. The client's responsibility is to talk to other clients and manage file requests that it sends to other clients.
