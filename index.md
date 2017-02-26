@@ -26,7 +26,7 @@ The data structure backing the list of clients is a singly linked list. This was
 
 ### Torrent File Creation
 
-We created torrent files following the BitTorrentSpecification, storing information in a bencoded format.  Information such as the address of the tracker server, the name of the file, and the hashes of file pieces are stored in the bencoded format after parsing and partitioning the original file, and output to a file with a .torrent extension.
+We created torrent files following the BitTorrentSpecification, storing information in a bencoded format.  Meta information about the file is stored in the bencoded format after parsing and partitioning the original file, and output to a file with a .torrent extension.  File information is obtained by parsing the original file by bytes and hashing each file piece, then storing information in memory before exporting everything in the bencoded format.
 
 ### Torrent File Parsing
 
