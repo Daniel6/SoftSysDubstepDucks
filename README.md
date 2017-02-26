@@ -4,6 +4,8 @@ Team Dubstep Ducks
 Project 1 for the Software Systems class
 
 ## Description
+This student project was created as part of an educational course. For more details, see the [final report](./index.md).
+
 This project alows users to set up their own peer to peer file transfer system following the BitTorrent protocol. This distribution is not intended for rigorous use, and was instead designed as a learning exercise for the team. As such, the project is more than likely disfunctional, although it may still prove to be valuable as a reference.
 
 ## Setup and Usage
@@ -11,7 +13,7 @@ To compile the project from source, simply run `make` in the root directory.
 
 Before running any clients, the tracker server must be set up. Executing the `tracker_serv.out` binary will initialize the tracker server on your machine. Make note of your machine's IP address, as this will need to be encoded in any torrent files that you distribute.
 
-Now that the tracker server is up and running, you must generate a torrent file for the file that you want to distribute. The torrent file that is packaged in this project is set up to torrent a testing file. Use your text editor of choice to edit `test_files/moby_dick.txt.torrent` and change `announce36:http://carrot.cs.swarthmore.edu:696910` to `announce36:<your IP>:30000`.
+Now that the tracker server is up and running, you must generate a torrent file for the file that you want to distribute. Run `encode.out <name of file you want to distribute> <your IP here>` to generate a torrent file for the file specified. You will want to distribute `<file to distribute>.torrent` to all of the clients via your ftp of choice.
 
 Each client must posess a copy of this torrent file in order to join the network, as it contains important metadata about the file being transferred.
 
@@ -25,6 +27,10 @@ Jordan Van Duyne
 Thuc Tran
 
 Andrew Pan
+
+### Additional Libraries
+
+bencode.c written by Mike Frysinger and edited by Adam Aviv
 
 
 ## License

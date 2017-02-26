@@ -7,9 +7,8 @@
 
 #define BUFFSIZE 10000
 
-//maybe something about enum attached to a struct to determine the variable type for arbitrary bencoding
-//include file sha, going to have to edit decode too
-//gcc shatest.c -l ssl -l crypto -o shatest.out
+// Compile with:
+// gcc encode.c bencode.h -l ssl -l crypto -o encode.out -g
 
 char *encodeString(char *input, char *ansqwr){
 	char *ans = malloc(80);
