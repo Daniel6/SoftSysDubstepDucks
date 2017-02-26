@@ -30,4 +30,5 @@ This project was intended to be a learning exercise for the team to familiarize 
 * to learn about networking in C and how messages are handled on a low level
 * to learn about multiprocessing in C and managing shared resources
 * to learn how to write clean and readable C code
+
 So while the project was not as functional as we had hoped, it still proved to be a valuable learning experience and was successful in allowin the team to gain in depth experience in their fields of interest.
