@@ -4,6 +4,8 @@ Team Dubstep Ducks
 Project 1 for the Software Systems class
 
 ## Description
+This student project was created as part of an educational course. For more details, see the [final report](./index.md).
+
 This project alows users to set up their own peer to peer file transfer system following the BitTorrent protocol. This distribution is not intended for rigorous use, and was instead designed as a learning exercise for the team. As such, the project is more than likely disfunctional, although it may still prove to be valuable as a reference.
 
 ## Setup and Usage
