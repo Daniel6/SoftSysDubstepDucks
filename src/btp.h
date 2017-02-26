@@ -65,14 +65,14 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 #define FILE_TO_SEND    "testfile.txt"
 
 
-struct connection_info{
+typedef struct connection_info{
 	char ownInterested;
 	char ownChoked;
 	char peerInterested;
 	char peerChoked;
 	char * peerBitfield;
 	int sent_request;
-};
+} Connections;
 
 typedef struct node {
     int val;

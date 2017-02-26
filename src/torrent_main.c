@@ -76,12 +76,13 @@ int main(int argc, char ** argv) {
 
     // if the file does not exist, create it
     int main_fd;
+    set_bitfield(&main_fd, file_name, &bitfield_of_current_pieces, total_pieces_in_file, piece_size_bytes);
     if ((main_fd = open(file_name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
         error("Error opening file to torrent");
     }
 
-    
-    
+
+
     printf("Starting tracker stuff\n");
     //===============================================================================================
     //Tracker interaction here: Assumption of some kind of char array list 
@@ -248,6 +249,9 @@ int main(int argc, char ** argv) {
         
     }
 
+    // assign the pieces to the different peers
+    Node assigned_pieces = assign_pieces(connections, peers_to_connect_to, own_bitfield, total_pieces_in_file);
+
     // placeholder vars for when listener socket
     // is being contacted by a client peer
     struct sockaddr_storage client_addr;
@@ -276,57 +280,48 @@ int main(int argc, char ** argv) {
                 if (connect_d == -1) {
                     error("Listener can't open another socket");
                 }
-                // someone is talking to me so fork it
-                if (!fork()) {
-                    // in the child
-                    // fork() returning 0 means you are in child
-                    
-                    // gotta close main listener if you're in the child
-                    // cuz child uses connect_d
-                    close(listener_socket);
 
-                    // read in the message being sent to you
-                    int bytes_received = read_in(connect_d, buffer, BUFSIZ);
-                    if (recieved_bytes == -1) {
-                        fprintf(stderr, "Error on reception");
+                // read in the message being sent to you
+                int bytes_received = read_in(connect_d, buffer, BUFSIZ);
+                if (recieved_bytes == -1) {
+                    fprintf(stderr, "Error on reception");
+                    exit(EXIT_FAILURE);
+                } else if (recieved_bytes == 0) {
+                    fprintf(stdout, "Dropped Connection\n");
+                    exit(EXIT_FAILURE);
+                } else if(recieved_bytes == FULLHANDSHAKELENGTH) {
+                    // peer sent a handshake
+                    // gotta parse the handshake, verify, send back own handshake
+
+                    char *peer_handshake = malloc(FULLHANDSHAKELENGTH); // buffer to store
+                    int test_failed_status;
+                    memcpy(peer_handshake, buffer, 68);
+                    test_failed_status = verify_handshake(peer_handshake, file_sha); // 0 if the handshake was verified FIX THIS B/C ?!?!?!
+                    if (test_failed_status) {
+                        // handshake was bad (failed test)
+                        // so close this connection
+                        fprintf(stderr, "Error on handshake ---> %d\n", test_failed_status);
+                        close(connect_d);
                         exit(EXIT_FAILURE);
-                    } else if (recieved_bytes == 0) {
-                        fprintf(stdout, "Dropped Connection\n");
-                        exit(EXIT_FAILURE);
-                    } else if(recieved_bytes == FULLHANDSHAKELENGTH) {
-                        // peer sent a handshake
-                        // gotta parse the handshake, verify, send back own handshake
-
-                        char *peer_handshake = malloc(FULLHANDSHAKELENGTH); // buffer to store
-                        int test_failed_status;
-                        memcpy(peer_handshake, buffer, 68);
-                        test_failed_status = verify_handshake(peer_handshake, file_sha); // 0 if the handshake was verified FIX THIS B/C ?!?!?!
-                        if (test_failed_status) {
-                            // handshake was bad (failed test)
-                            // so close this connection
-                            fprintf(stderr, "Error on handshake ---> %d\n", test);
-                            close(connect_d);
-                            exit(EXIT_FAILURE);
-                        } else {
-                            // their handshake was legit
-                            memset(buffer, 0, sizeof(buffer));
-                            free(peer_handshake);
-
-                            // so send back your handshake
-                            if (say(client_socket, own_handshake) != -1) {
-                                // and then send your bitfield
-                                say(client_socket, bitfield_of_current_pieces);
-                            }
-                        }
-                        
-            
                     } else {
-                        // they sent a message from PWP
-                        // gotta respond accordingly
+                        // their handshake was legit
+                        memset(buffer, 0, sizeof(buffer));
+                        free(peer_handshake);
 
-                    }  
+                        // so send back your handshake
+                        if (say(client_socket, own_handshake) != -1) {
+                            // and then send your bitfield
+                            say(client_socket, bitfield_of_current_pieces);
+                        }
+                    }
+                    
+        
+                } else {
+                    // they sent a message from PWP
+                    // gotta respond accordingly
 
-            }
+                }  
+
 
             // deal with other communications:
             // you are acting as client, peers are servers
