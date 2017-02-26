@@ -319,7 +319,7 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 }
 
 
-void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_in_file)
+void initialize_connection(connection_info* connection_to_initialize, int total_pieces_in_file)
 {
     //Connection status
     char initial = 0<<7| //Connection status = 0
@@ -327,7 +327,7 @@ void initialize_connection(struct connection_info* connection_to_initialize, int
                    1<<5| //ownChoke = 1
                    0<<4| //peerInterested = 0
                    1<<3| //PeerChoked = 1
-                   0<<2|; // Pending Request
+                   0<<2;//Pending Request
 
     connection_to_initialize->status_flags |=initial;
     connection_to_initialize->requested_piece = -1;
@@ -348,4 +348,35 @@ void Verify_handshake(char* buffer, char * file_sha)
     }
     memset(buffer, 0, sizeof(buffer));
     free(peer_handshake);    
+}
+
+
+char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
+{
+    char * bitfield_message = malloc(bitfieldMsgLength);
+    memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
+    return bitfield_message;
+}
+
+void Send_interested(int client_socket, connection_info *connection)
+{
+    char * interested = construct_state_message(INTERESTED);
+    connection->status_flags |= 1<<OWNINTERESTED;
+    //Send interested message.
+    if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(interested);
+}
+
+void Send_uninterested(int client_socket, connection_info* connection)
+{
+    connection->status_flags |= 0<<OWNINTERESTED;
+    char * uninterested = construct_state_message(UNINTERESTED);
+    if(send(client_socket, uninterested, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(uninterested); 
 }

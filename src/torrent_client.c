@@ -10,7 +10,7 @@
 int main(int argc, char ** argv)
 {
 	char buffer[BUFSIZ];
-	struct connection_info connections[10];
+	connection_info connections[10];
 	struct sockaddr_in peer[MAX_PEERS];
 	struct pollfd fds[MAX_CONNECTIONS];
 
@@ -137,9 +137,9 @@ int main(int argc, char ** argv)
 	//Creating a listening socket, has room for 10 connections in backlog. decided to have it 
 	//on last connection. This will be used as the 0 index in our file descriptor table 
 	//for polling
-	listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
-	fds[0].fd = listener_socket;
-	fds[0].events = POLLIN|POLLOUT;
+	//listener_socket = server_socket_wrapper(&listener_addr, own_ip, own_port);
+	//fds[0].fd = listener_socket;
+	//fds[0].events = POLLIN|POLLOUT;
 
 	//This refers to ensuring that we don't have more peers than our max allowed
 	//connections. 
@@ -157,10 +157,8 @@ int main(int argc, char ** argv)
 		//Create a new socket address from peer -> do we need this? Might not.
 		//Mostly because of the fact tahat we rewrite peers. But just in case.
 		struct sockaddr_in *remote_addr = &peer[i];
-		printf("hello\n");
-
 		int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, ip, port_number);
-		printf("hello\n");
+
 		
 		fds[i+1].fd = client_socket;
 		//Need to double check
@@ -181,20 +179,9 @@ int main(int argc, char ** argv)
 			exit(EXIT_FAILURE);
 		}
 		printf("Sent Handshake\n");
-		
+	
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
-
-		//Allocates space for a peer handshake.
-		//In retrospect, it would probably be best to pull this out of the for loop in
-		//order to minimize fragmentation
-		//The original reason for this positioning was due to pulling this from a
-		//Single iteration program.
-		char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
-		int test;
-		//I really dislike the following code as written.
-
-		//If there was a error on attempting to recv the data.
 		if(recieved_bytes == -1)
 		{
 			fprintf(stderr, "Error on reception");
@@ -208,54 +195,35 @@ int main(int argc, char ** argv)
 		}
 		else if(recieved_bytes == FULLHANDSHAKELENGTH)
 		{
+	
 			Verify_handshake(buffer, file_sha);
+			memset(buffer, 0,sizeof(buffer));
 		}	
 		else if( recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength)
 		{
-			//If recieving bitfield message too.
-			char * bitfield_message = malloc(bitfieldMsgLength);
-			memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
-			test = verify_handshake(peer_handshake, file_sha);
-		    // Testing for issues on handshake.
-			if(test)
-			{
-				fprintf(stderr, "Error on handshake ---> %d\n", test);
-				exit(EXIT_FAILURE);
-			}
-	   	    //If there is a bitfield option, set bitfield. 
-			memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
-			memcpy(connections[i].peerBitfield, bitfield_message+5, total_pieces_in_file);
-			//Clear buffer
-			memset(buffer, 0, sizeof(buffer));
+			Verify_handshake(buffer, file_sha);
+			//Set Peer Bitfield
+
+			connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
+
 			//Check to see if peer had undownloaded pieces.
 			if(0<peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen))
 			{
-				//create an interested message, enable interested configuration
-				char * interested = construct_state_message(INTERESTED);
-				connections[i].ownInterested = TRUE;
-				//Send interested message.
-				if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
-					fprintf(stderr, "Error on send --> %s\n", strerror(errno));
-					exit(EXIT_FAILURE);
-				}
-				free(interested);
+				Send_interested(client_socket, &connections[i]);	
 			}
 			else{
 				//Send uninterested message
-				char * uninterested = construct_state_message(UNINTERESTED);
-				if(send(client_socket, uninterested, STATEMSGSIZE,0)==-1){
-					fprintf(stderr, "Error on send --> %s\n", strerror(errno));
-					exit(EXIT_FAILURE);
-				}
-				free(uninterested);	
-				}
-	    //Free handshake  + memory after completion. -> Don't think we need it afterwards
-			free(bitfield_message);
-			free(peer_handshake);
+				Send_uninterested(client_socket, &connections[i]);
+			}
+			//Clear buffer
+			memset(buffer, 0, sizeof(buffer));
+
 		};	
 	}
 
+		print_bits(&connections[i].peerBitfield, bitfieldMsgLength);
 
+		printf("hello\n");
 	for(;;)
 	{
 		int rv = poll(fds, POLLIN|POLLOUT, 60*1000);
