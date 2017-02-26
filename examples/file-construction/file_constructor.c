@@ -16,7 +16,7 @@
 
 
 
-void set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
+void set_initial_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int piece_len, char *piece_shas) {
 	// check if file exists
 	int bitfield_len = num_pieces / 8; // 8 is size of byte
 	memset(bitfield, 0, bitfield_len);
@@ -26,19 +26,14 @@ void set_bitfield(int *fd, char *file_name, char *bitfield, int num_pieces, int 
 	    for (int i = 0; i < num_pieces; i++) {
 	    	// save the piece
 			char piece[piece_len] = get_piece(fd, i, piece_len);
-			memcpy(expected_piece_sha, &piece_shas[i * (piece_len + 1)], piece_len);
+			memcpy(expected_piece_sha, piece_shas+(i*SHA_DIGEST_LENGTH), SHA_DIGEST_LENGTH);
+	
 			if (verify_piece(piece, expected_piece_sha, piece_len)) {
 				// add to bitfield
-				
-				memset(bitfield, 1, );
-				bitfield[i] = 1;
+				int byte_index = i/8;
+				int bit_index = i%8;
+				bitfield[byte_index]|= 1<<bit_index;
 			}
-			// unsigned char hash[SHA_DIGEST_LENGTH];
-			// SHA1(piece, piece_len, hash);
-			// char expected_piece_sha[SHA_DIGEST_LENGTH];
-			// if (strcmp(hash, piece_shas[i])) {
-			// 	// add to bitfield
-			// }
 		}
 
 	} else {
@@ -115,34 +110,4 @@ void write_piece(int fd, int piece_num, int piece_len, char *buffer) {
 		printf("Success writing to the file!!!!!\n");
 		return;
 	}
-}
-
-int main(int argc, char *argv[]) {
-	// int fd;
-	// if ((fd = open("test.txt", O_RDONLY)) < -1) {
-	// 	// error opening file
-	// 	return 1;
-	// }
-	
-	// int fd_write;
-	// if ((fd_write = open("write.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IXUSR)) < 0) {
-	// 	// error opening write file
-	// 	return 1;
-	// }
-	
-	// char* piece = get_piece(fd, 1, 5);
-	// printf("%s\n", piece);
-	// write_piece(fd_write, 1, 5, piece);
-
-	
-	unsigned char expect[SHA_DIGEST_LENGTH];
-	char data[] = "hi";
-	char data2[] = "yo";
-	char data3[] = "hi";
-	size_t length = sizeof(data);
-	SHA1(data, length, expect);
-	int i = verify_piece(data2, expect, length);
-	printf("%i", i);
-
-	return 0;
 }
