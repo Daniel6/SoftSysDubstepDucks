@@ -5,19 +5,6 @@
 #include "tracker.h"
 
 /*
-  Print arbitrary memory in hexidecimal format
-*/
-void pprint_hex_memory(void *mem, int size) {
-  int i;
-  unsigned char *p = (unsigned char *)mem;
-  for (i=0;i<size;i++) {
-    printf("0x%02x ", p[i]);
-  }
-  printf("\n");
-}
-
-
-/*
   Request that the tracker server send all ips of other clients which have "joined"
   The response comes in many parts.
   The first part details how many ips will be sent, and by extension how many more messages are coming.
@@ -29,9 +16,7 @@ void requestPeers(int tracker_socket, char *peers, int *numPeers) {
     char *recv_msg = recvMsg(tracker_socket);
     fprintf(stdout, "Sizeof data: %d\n", recv_msg[0]);
     memcpy(numPeers, recv_msg, 1);
-    pprint_hex_memory(numPeers, 4);
     memcpy(peers, recv_msg + 1, *numPeers*16);
-    pprint_hex_memory(peers, *numPeers*16);
     free(recv_msg);
   }
   

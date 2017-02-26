@@ -157,7 +157,11 @@ int main(int argc, char ** argv)
 		//Create a new socket address from peer -> do we need this? Might not.
 		//Mostly because of the fact tahat we rewrite peers. But just in case.
 		struct sockaddr_in *remote_addr = &peer[i];
+		printf("hello\n");
+
 		int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, ip, port_number);
+		printf("hello\n");
+		
 		fds[i+1].fd = client_socket;
 		//Need to double check
 		fds[i+1].events = POLLIN|POLLOUT;
@@ -204,23 +208,7 @@ int main(int argc, char ** argv)
 		}
 		else if(recieved_bytes == FULLHANDSHAKELENGTH)
 		{
-			//If the connection only responded with a handshake 
-			memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
-			//Verify handshake, with sha -> technically not useful right now
-			//Due to fact that their is no implementing the file_shas yet.
-			test = verify_handshake(peer_handshake, file_sha);
-		    // Testing for issues on handshake.
-			if(test)
-			{
-				fprintf(stderr, "Error on handshake ---> %d\n", test);
-				exit(EXIT_FAILURE);
-			}
-			//Clear buffer afterwards -> might be overly aggressive to clear
-			//Entire buffer here due to speed and overwrite, but given the program 
-			//execution, the only relevant information in buffer should be the handshake
-			memset(buffer, 0, sizeof(buffer));
-			//Frees the peer's handshake once done. 
-			free(peer_handshake);
+			Verify_handshake(buffer, file_sha);
 		}	
 		else if( recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength)
 		{

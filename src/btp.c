@@ -321,11 +321,17 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 
 void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_in_file)
 {
-    connection_to_initialize->ownInterested = FALSE;
-    connection_to_initialize->ownChoked = TRUE;
-    connection_to_initialize->peerInterested = FALSE;
-    connection_to_initialize->peerChoked = TRUE;
-    connection_to_initialize->sent_request = NOREQUEST;
+    //Connection status
+    char initial = 0<<7| //Connection status = 0
+                   0<<6| //ownInterested = 0
+                   1<<5| //ownChoke = 1
+                   0<<4| //peerInterested = 0
+                   1<<3| //PeerChoked = 1
+                   0<<2|; // Pending Request
+
+    connection_to_initialize->status_flags |=initial;
+    connection_to_initialize->requested_piece = -1;
+    connection_to_initialize->piece_to_send = -1;
     connection_to_initialize->peerBitfield = malloc(total_pieces_in_file/8);
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }

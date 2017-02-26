@@ -66,12 +66,18 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 
 
 struct connection_info{
-	char ownInterested;
-	char ownChoked;
-	char peerInterested;
-	char peerChoked;
+	/*Status
+	bit 0 = connection status
+	bit 1 = ownInterested
+	bit 2 = ownChoke
+	bit 3 = peerInterested
+	bit 4 = peerChoke
+	*/
+	char status_flags;
+	int requested_piece;
+	int piece_to_send;
 	char * peerBitfield;
-	int sent_request;
+	
 };
 
 
