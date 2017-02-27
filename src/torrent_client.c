@@ -9,6 +9,89 @@
 #include "tracker.h"
 
 <<<<<<< HEAD
+int main(int argc, char ** argv)
+{
+	char buffer[BUFSIZ];
+	connection_info connections[10];
+	struct sockaddr_in peer[MAX_PEERS];
+	struct pollfd fds[MAX_CONNECTIONS];
+
+
+	memset(fds, 0 , sizeof(fds));
+
+
+	//Important Global Variables for right now. 
+	//	int sock_len = sizeof(struct sockaddr *);
+	// Listener socket information
+	int listener_socket; 
+	struct sockaddr_in listener_addr;
+	// For now, SERVER ADDRESS and PORT_NUMBER need to be defined 
+	// Somehow specifically for the computer -> not just homing it. 
+	char * own_ip = SERVER_ADDRESS;
+	int own_port = LISTENER_PORT_NUMBER;
+	//Parse torrent file. 
+
+	char target[] = "moby_dick.txt.torrent";
+	char length[80];
+	bt_info_t *ans =  decodeFile(target);
+
+	int file_destination;
+	char * bitfield_of_current_pieces =	set_initial_bitfield(&file_destination, ans->name, ans->num_pieces, ans->piece_length, ans-> piece_hashes);
+
+	//Parse tracker info
+
+	 char *tracker_ip = "10.7.24.69";
+	 printf("Tracker IP set to: %s\n", tracker_ip);
+	 printf("%s\n", tracker_ip);
+	//char *tracker_ip = malloc(16);
+	//memcpy(tracker_ip, ans->announce, 16);
+	//
+
+	//	char * announce = "127.0.0.1 8000";
+	//	char * announce_ips = "???";
+	//	char * file_name = "testfile.txt";
+	
+	int file_length = 256;
+	int piece_size_bytes = 16;
+	int total_pieces_in_file = file_length/piece_size_bytes;
+	//Truncating division. This only works right now for total pieces
+	//divisible by 8. 
+	int bitfieldLen = total_pieces_in_file/sizeof(char);
+	if(total_pieces_in_file%8 != 0)
+	{
+		bitfieldLen++;		
+	}
+	print_bits(bitfield_of_current_pieces, bitfieldLen);
+
+
+	//Length of bitfieldMsgs for when sending to other peers. 
+	int bitfieldMsgLength = 4 + 1 + bitfieldLen;
+	//Construct Handshake 
+	//Own_id will probably be best to be input as an argument to program. Must
+	//Be unique across the network. 
+	//file_sha should be the sha for the torrent file. 
+	char * file_sha = "AAAAAAAAAAAAAAAAAAA1";
+	char * own_id = "00000000000000000001";
+	char * own_handshake = construct_handshake(file_sha, own_id);
+
+	
+	//Somewhere here probably should be a way to check to see if
+	//File is already there/partiall downloaded. 
+	/*
+		CODE TO CHECK FOR EXISTANCE. 
+		should output a bitfield w/ values that correspond to owned pieces. 
+	*/
+	//Output should probablybe some kind of way of dealing w/ a file 
+	//file descriptors and such. 
+
+	printf("Starting tracker stuff\n");
+	//===============================================================================================
+	//Tracker interaction here: Assumption of some kind of char array list 
+	//Creates tracker socket.
+	struct sockaddr_in tracker_addr;
+	tracker_addr.sin_family = AF_INET;
+=======
+<<<<<<< HEAD
 int main(int argc, char ** argv) {
 
     char buffer[BUFSIZ];
@@ -83,6 +166,7 @@ int main(int argc, char ** argv) {
     //Tracker interaction here: Assumption of some kind of char array list 
     struct sockaddr_in tracker_addr;
     tracker_addr.sin_family = AF_INET;
+>>>>>>> 7487a61e4782300a6b59cdd1411bb5d6a491e973
     tracker_addr.sin_port = htons(TRACKER_PORT);
     inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
 

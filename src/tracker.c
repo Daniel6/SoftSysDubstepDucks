@@ -94,22 +94,27 @@ char *recvMsg(int tracker_socket) {
 void addIfAbsent(Client *head, char *ip, int *numClients) {
   Client *curr_node;
   curr_node = head;
-  if (strcmp(curr_node->ip, ip) == 0) {
-    // Special case for when linked list contains only 1 node
-    printf("Head was duplicate.\n");
-    return;
-  }
-  while (curr_node->next != 0) {
-    printf("Checking next.\n");
+  // if (strcmp(curr_node->ip, ip) == 0) {
+  //   // Special case for when linked list contains only 1 node
+  //   printf("Head was duplicate.\n");
+  //   return;
+  // }
+  while (1) {
     if (strcmp(curr_node->ip, ip) == 0) {
       printf("Node was duplicate.\n");
       return;
     } else {
-      curr_node = curr_node->next;
+      if (curr_node->next == 0) {
+        break;
+      } else {
+        printf("Checking next.\n");
+        curr_node = curr_node->next;
+      }
     }
   }
 
   // When the while loop ends, curr_node should point to the tail of the list
+  printf("Adding new node: %s\n", ip);
   Client *new_node;
   new_node = malloc(sizeof(Client));
   new_node->ip = strdup(ip);
@@ -170,16 +175,20 @@ int configureSocket() {
 /*
   Given a linked list of clients, write their ip's to a buffer and send
   it over the socket given.
+
+  Does not include the ignore_ip in the message.
 */
-void sendClients(int socket, Client *head, int numClients) {
+void sendClients(int socket, Client *head, int numClients, char *ignore_ip) {
+  int numClientsToSend = numClients - 1;
   if (numClients <= 0) {
     // Do not attempt to send no clients
+    printf("No clients to send.\n");
     return;
   }
 
   // Bundle all client ip's into one message
-  char *data = malloc(1 + (IP_SIZE * numClients));
-  memcpy(data, &numClients, 1);
+  char *data = malloc(1 + (IP_SIZE * numClientsToSend));
+  memcpy(data, &numClientsToSend, 1);
 
   Client *curr_node;
   curr_node = head;
@@ -196,13 +205,18 @@ void sendClients(int socket, Client *head, int numClients) {
   }
 
   int i;
+  int numIpsCopied = 0;
   curr_node = head;
+
   // Copy all ip's into data buffer for sending
   for (i = 0; i < numClients; i++) {
-    memcpy(data + 1 + (IP_SIZE * i), curr_node->ip, IP_SIZE);
+    if (strcmp(curr_node->ip, ignore_ip) != 0) {
+      memcpy(data + 1 + (IP_SIZE * numIpsCopied), curr_node->ip, IP_SIZE);
+      numIpsCopied++;
+    }
     curr_node = curr_node->next;
   }
 
-  sendData(socket, data, IP_SIZE * numClients);
+  sendData(socket, data, 1 + (IP_SIZE * numClientsToSend));
   free(data);
 }
