@@ -341,30 +341,30 @@ int main(int argc, char *argv[]) {
 				// if we haven't requested a piece:
 					// send an interested message
 
-				if (connections[i].pending_request) {
+				// if (connections[i].pending_request) {
 					// we already requested from them, waiting for it to be sent
 					// so we should send them something if they are interested
 
-					if (!connections[i].sent) {
+					// if (!connections[i].sent) {
 						// we have not sent them anything so check steps
 						// necessary to send something
 
-						if (connections[i].peerInterested) {
-							if (!connections[i].choked) {
-								if (connections[i].piece_to_send >= 0) {
+						// if (connections[i].peerInterested) {
+							// if (!connections[i].choked) {
+								// if (connections[i].piece_to_send >= 0) {
 									// they are interested, unchoked, and have
 									// requested a piece, so send a piece message
 
-								}
-							} else {
+								// }
+							// } else {
 								// they are interested but choked, so unchoke them
-							}
-						}
-					}
+							// }
+						// }
+					// }
 					
 
 
-				} else {
+				// } else {
 					// we haven't requested anything
 					// do they have a piece we need??
 					// if so:
@@ -376,14 +376,14 @@ int main(int argc, char *argv[]) {
 						// else 
 							// send interested
 
-					if (connections[i].choked) {
+					// if (connections[i].choked) {
 						// we are choked, so ask them to unchoke
 						// by sending an interested message
 
-					} else {
+					// } else {
 						// we are unchoked so 
-					}
-				}
+					// }
+				// }
 			}
 
 		}
