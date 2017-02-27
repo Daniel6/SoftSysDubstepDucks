@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 	char *tracker_ip = malloc(16);
 	memcpy(tracker_ip, ans->announce, 16);
 
-	printf("Starting tracker intersaction\n");
+	printf("\nStarting tracker intersection\n");
 
 	// Tracker interaction here: Assumption of some kind of char array list 
 	// Creates tracker socket.
