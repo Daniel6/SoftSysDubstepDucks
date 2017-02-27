@@ -578,7 +578,7 @@ void Send_unchoked(int client_socket, Connections* connection)
 }
 
 void Send_request(int client_socket, Connections* connection, int piece_index) {
-   char *request = construct_request_message(int piece_index, 0, 0);
+   char *request = construct_request_message(piece_index, 0, 0);
    if(send(client_socket, request, REQUESTMSGSIZE, 0) == -1){
         fprintf(stderr, "Error on send --> %s\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -597,7 +597,7 @@ void Send_piece(int client_socket, Connections* connection, int piece_index, int
     }
     connection->status_flags |= 1<<PENDINGREQUEST;
     connection->requested_piece = piece_index;
-    free(request); 
+    free(piece_msg); 
 }
 
 void Set_Flag(Connections* connection, int flag, int state)

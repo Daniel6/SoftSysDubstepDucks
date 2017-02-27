@@ -131,7 +131,7 @@ void Send_interested(int client_socket, Connections* connection);
 void Send_uninterested(int client_socket, Connections* connection);
 void Send_unchoked(int client_socket, Connections* connection);
 void Send_request(int client_socket, Connections* connection, int piece_index);
-void Send_piece(int client_socket, Connections* connection, int piece_index);
+void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len)
 void Set_Flag(Connections* connection, int flag, int state);
 
 

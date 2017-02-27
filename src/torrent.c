@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
 						// this peer is a client b/c they only sent
 						// handshake, not also a bitfield
 
-						char * bf_message = construct_bitfield_message(bitfield_of_current_pieces, total_pieces/8);
+						char * bf_message = construct_bitfield_message(bitfield_of_current_pieces, total_pieces_in_file/8);
 						char * intro_msg = malloc(FULLHANDSHAKELENGTH+bitfieldMsgLength);
 						memcpy(intro_msg, own_handshake, FULLHANDSHAKELENGTH);
 						memcpy(intro_msg+FULLHANDSHAKELENGTH, bf_message, bitfieldMsgLength);
@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
 	                        	memcpy(&(buffer), msg + 5 + 5, piece_size_bytes);
 	                        	if (verify_piece(buffer, ans->piece_hashes[+(i*SHA_DIGEST_LENGTH)])) {
 	                        		write_piece(file_destination, piece_index, piece_size_bytes, buffer);
-	                        		bitfield_of_current_pieces |= 1 << piece_index;
+	                        		*bitfield_of_current_pieces |= 1 << *piece_index;
 	                        		Set_Flag(&connections[i], PENDINGREQUEST, 0);
 	                        	}
 	                            printf("piece tho\n");
@@ -348,17 +348,17 @@ int main(int argc, char *argv[]) {
 					// if we haven't requested a piece:
 						// send an interested message
 
-					int pending_request = (connections[i].status_flag >> PENDINGREQUEST) & 1;
-					int own_interested = (connections[i].status_flag >> OWNINTERESTED) & 1;
-					int own_choke = (connections[i].status_flag >> OWNCHOKE) & 1;
+					int pending_request = (connections[i].status_flags >> PENDINGREQUEST) & 1;
+					int own_interested = (connections[i].status_flags >> OWNINTERESTED) & 1;
+					int own_choke = (connections[i].status_flags >> OWNCHOKE) & 1;
 
 					// if peer interested and (we are not interested or we have a pending request)
-					if ( ((connections[i].status_flag >> PEERINTERESTED) & 1) && (!own_interested || pending_request)) {
+					if ( ((connections[i].status_flags >> PEERINTERESTED) & 1) && (!own_interested || pending_request)) {
 						// we already requested from them, waiting for it to be sent
 						// or we do not want anything from them
 						// so we should send them something if they are interested
 
-						if (!((connections[i] >> PEERCHOKE) & 1)) {
+						if (!((connections[i].status_flags >> PEERCHOKE) & 1)) {
 							int piece_num = connections[i].piece_to_send;
 								if (piece_num >= 0) {
 									// they are interested, unchoked, and have
@@ -391,10 +391,11 @@ int main(int argc, char *argv[]) {
 								if (!own_choke) {
 									int piece_index;
 									for (i = 0; i < total_pieces_in_file; i++) {
-										int own_have = (bitfield_of_current_pieces >> i) & 1;
-										int peer_have = (connections[i].peerBitfield >> i) & 1;
+										int own_have = (*bitfield_of_current_pieces >> i) & 1;
+										int peer_have = (*connections[i].peerBitfield >> i) & 1;
 										if (!own_have && peer_have) {
 											piece_index = i;
+											break;
 										}
 									}
 									Send_request(fds[i].fd, &connections[i], piece_index);
