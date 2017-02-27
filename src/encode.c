@@ -87,21 +87,26 @@ char *encodeFile(char *target, char *address){
 	strcpy(output, target);
 	strncat(output, ".torrent", BUFFSIZE);
 	FILE *torrentFile = fopen(output, "w");
+	//	A "dictionary" for storing bencoded values which is really just an array, but treat as keys in even indices mapping to the next consecutive index
 	char dict[4][80];
 	int dictLength = 4;
 	char ans[BUFFSIZE] = "";
 	char *tempAns = malloc(80);
 	char *info = malloc(BUFFSIZE);
+	//	Standard strings to act as keys for the bencoded dictionary
 	strcpy(dict[0], encodeString("announce"));
 	strcpy(dict[1], encodeString(address));
 	strcpy(dict[2], encodeString("info"));
+	//	Info dictionary for specific meta file info
 	strcpy(dict[3], infoDict(target));
 	char finalAns[BUFFSIZE] = "d";
+	//	Get all info from the "dictionary", and concatenate into a string
 	int i;
 	for(i = 0; i < dictLength; i++){
 		strncat(finalAns, dict[i], BUFFSIZE);
 	}
 	strncat(finalAns, "e", BUFFSIZE);
+	//	Print the string to file
 	fprintf(torrentFile, "%s", finalAns);
 	fclose(f);
 	fclose(torrentFile);
@@ -112,11 +117,14 @@ char *encodeFile(char *target, char *address){
 char *fileSHA(char *target){
 	FILE *file = fopen(target, "r");
 	fseek(file, 0, SEEK_END);
+	//	Obtain file length
 	long fileLength = ftell(file);
 	rewind(file);
 	char buffer[BUFFSIZE] = "";
+	//	Write all file contents into a buffer
 	fread(buffer, fileLength, 1, file);
 	unsigned char ans[SHA_DIGEST_LENGTH] = "";
+	//	Obtain the SHA1 of the file contents
 	SHA1(buffer, fileLength, ans);
 	fclose(file);
 	return ans;

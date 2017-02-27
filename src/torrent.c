@@ -173,6 +173,16 @@ int main(int argc, char *argv[]) {
 	int *piece_index = malloc(4);
 
 	while (1) {
+		int num_have_pieces = 0;
+		for (i = 0; i < total_pieces_in_file; i++) {
+			if (bitfield_of_current_pieces[i] & 255 == 1) {
+				num_have_pieces++;
+			}
+		}
+		if (num_have_pieces == total_pieces_in_file) {
+			printf("You have the entire file!\n");
+		}
+
 		int n_ready = poll(fds, max_peer_index + 1, timeout); // number of ready connections
 		if (n_ready == -1) {
 			perror("Poll error: "); 
