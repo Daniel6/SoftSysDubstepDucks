@@ -20,7 +20,11 @@ BitTorrent protocol specifies many different messages for clients to use when co
 
 By default, when a peer to peer connection opens, both ends are flagged as choked and uninterested. The choked status represents the capacity of either client to send/receive data. The interested status represents whether the data is still being requested (since multiple connections can be opened for the same data, the remaining connections must be closed when the data is received). In order to transfer data on the connection, both sides must be unchoked, and the receiver must be interested.
 
-Once the connection is unchoked and the leecher is interested, 
+Once the connection is unchoked and the leecher is interested, the seeder sends piece messages containing data that the leecher requested. If the leecher requested a large chunk of data, multiple piece messages might be sent to complete the data transfer. At any point in time, the leecher can send a cancel message to the seeder to cancel the transfer. This is mainly used if the leecher is shutting down, or has already received the data from another seeder.
+
+In addition to these messaged, the clients send ping messages to each other to check their statuses. If a client is unresponsive, then it gets dropped by the other client.
+
+Our implementation of a peer to peer file transfer system follows this architecture very closely, down to the formatting of the messages.
 
 ## Implementation
 We chose to implement two major facets of a peer to peer system: a centralized tracker server, and a client that would be run on many machines. The central server's purpose is to keep track of active clients, relay this list to the clients, and serve the torrent metadata file to the clients. The client's responsibility is to talk to other clients, manage file requests that it sends to other clients, and listen for file requests to send the correct file pieces.
