@@ -110,6 +110,7 @@ char * construct_bitfield_message(char * bitfield, int bitfieldLen);
 char * construct_state_message(unsigned char msgID);
 char * construct_have_message(int piece_index);
 char * construct_request_message(int piece_index, int blockoffset, int blocklength);
+char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece);
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
@@ -128,6 +129,9 @@ void Verify_handshake(char* buffer, char * file_sha);
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces);
 void Send_interested(int client_socket, Connections* connection);
 void Send_uninterested(int client_socket, Connections* connection);
+void Send_unchoked(int client_socket, Connections* connection);
+void Send_request(int client_socket, Connections* connection, int piece_index);
+void Send_piece(int client_socket, Connections* connection, int piece_index);
 void Set_Flag(Connections* connection, int flag, int state);
 
 

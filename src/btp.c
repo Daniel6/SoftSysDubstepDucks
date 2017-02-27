@@ -239,6 +239,33 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
     return msg;
 }
 
+char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece)
+{
+    //MsgLen = 4 bytes for msg_len 1 for msgID, 8 for piece, block_off
+    char * msg = malloc(13 + piece_len);
+    int * msgLen = malloc(4);
+    *msgLen = 9 + piece_len;
+    int * piece_id = malloc(4);
+    int * block_off = malloc(4);
+    char * msgID = malloc(1);
+
+    *msgID = PIECE;
+    *piece_id = piece_index;
+    *block_off = blockoffset;
+    memcpy(msg, msgLen, 4);
+    memcpy(msg+4, msgID, 1);
+    memcpy(msg+5, piece_id, 4);
+    memcpy(msg+9, block_off, 4);
+    memcpy(msg+13, piece, piece_len);
+
+
+    free(msgLen);
+    free(msgID);
+    free(piece_id);
+    free(block_off);
+    return msg;
+}
+
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength)
 {
     //MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
@@ -537,6 +564,40 @@ void Send_uninterested(int client_socket, Connections* connection)
         exit(EXIT_FAILURE);
     }
     free(uninterested); 
+}
+
+void Send_unchoked(int client_socket, Connections* connection)
+{
+    connection->status_flags |= 0<<PEERCHOKE;
+    char * unchoke = construct_state_message(UNCHOKE);
+    if(send(client_socket, unchoke, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(unchoke); 
+}
+
+void Send_request(int client_socket, Connections* connection, int piece_index) {
+   char *request = construct_request_message(int piece_index, 0, 0);
+   if(send(client_socket, request, REQUESTMSGSIZE, 0) == -1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    connection->status_flags |= 1<<PENDINGREQUEST;
+    connection->requested_piece = piece_index;
+    free(request); 
+}
+
+void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len) {
+   char *piece = get_piece_from_file(file_d, piece_index, piece_len);
+   char *piece_msg = construct_piece_message(piece_index, 0, piece_len, piece);
+   if(send(client_socket, piece_msg, 13 + piece_len, 0) == -1) {
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    connection->status_flags |= 1<<PENDINGREQUEST;
+    connection->requested_piece = piece_index;
+    free(request); 
 }
 
 void Set_Flag(Connections* connection, int flag, int state)
