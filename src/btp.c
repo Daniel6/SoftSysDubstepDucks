@@ -485,6 +485,36 @@ int read_in(int socket, char *buf, int len) {
 }
 
 
+int configureSocket() {
+  int reuse = 1;
+  int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
 
+  struct sockaddr_in listening_addr;
+  listening_addr.sin_family = PF_INET;
+  listening_addr.sin_port = (in_port_t)htons(30000);
+  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
+    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
+    exit(1);
+  }
+    
+  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
+    fprintf(stderr, "Can't bind to socket.\n");
+    exit(1);
+  }
+
+  if (listening_socket < 0) {
+    fprintf(stderr, "Error creating socket: error %d\n", listening_socket);
+    exit(1);
+  }
+
+  if (listen(listening_socket, 10) == -1) {
+    fprintf(stderr, "Can't listen.\n");
+    exit(1);
+  }
+
+  return listening_socket;
+}
 
 

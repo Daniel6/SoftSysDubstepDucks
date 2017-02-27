@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 	 * Do lots of stuff until it is time for main while loop
 	 *
 	*/ 
+	 
 
 	
 	int timeout = 60000; // 1 min in ms
@@ -227,6 +228,7 @@ int main(int argc, char *argv[]) {
 							// send request
 						// else 
 							// send interested
+
 					if (connections[i]->choked) {
 						// we are choked, so ask them to unchoke
 						// by sending an interested message
