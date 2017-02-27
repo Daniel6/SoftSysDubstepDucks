@@ -52,10 +52,12 @@ The tracker server was improved in the final iteration to no longer accept dupli
 
 ### Torrent File Creation
 ![Torrent encoding test](./images/softsys_torrent.png)
+
 *Tests for bencoding strings and integers perform as per standard.  After inputting the name of a text file and an address for a tracker server, a torrent file is created*
 
 ### Torrent File Parsing
 ![Torrent decoding test](./images/deocde_test.png)
+
 *Given a torrent file, all relevant meta file information is extracted*
 
 ### Learning Objectives
