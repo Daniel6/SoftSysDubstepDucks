@@ -75,6 +75,7 @@ char *infoDict(char *filename){
 	//	Add all file piece hashes to the return string
 	strncat(ans, encodeString(pieceSHAs), BUFFSIZE);
 	strncat(ans, "e", BUFFSIZE);
+	fclose(file);
 	return ans;
 }
 
@@ -107,6 +108,20 @@ char *encodeFile(char *target, char *address){
 	return finalAns;
 }
 
+//	Creates a SHA1 for a file
+char *fileSHA(char *target){
+	FILE *file = fopen(target, "r");
+	fseek(file, 0, SEEK_END);
+	long fileLength = ftell(file);
+	rewind(file);
+	char buffer[BUFFSIZE] = "";
+	fread(buffer, fileLength, 1, file);
+	unsigned char ans[SHA_DIGEST_LENGTH] = "";
+	SHA1(buffer, fileLength, ans);
+	fclose(file);
+	return ans;
+}
+
 int main(int argc, char*argv[]){
 	printf("Original: Hello world\n");
 	printf("Bencoded String: %s\n\n", encodeString("Hello world"));
@@ -114,8 +129,9 @@ int main(int argc, char*argv[]){
 	printf("Original: 12345\n");
 	printf("Bencoded Int: %s\n\n", encodeInt(12345));
 
-	// encodeFile("moby_dick.txt", "127.0.0.1");
 	char *torrentFile = malloc(BUFFSIZE);
 	torrentFile = encodeFile(argv[1], argv[2]);
-	printf("Torrent file of your input file: \n%s\n", torrentFile);
+	printf("Torrent file of your input file: \n%s\n\n", torrentFile);
+
+	printf("SHA1 of torrent file: \n%s\n", fileSHA(argv[1]));
 }
