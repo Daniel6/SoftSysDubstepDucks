@@ -12,6 +12,7 @@ int main(int argc, char*argv[]){
 	// fgets(target, 80, stdin);
 	char target[] = "62-Q2.mp3.torrent";
 	bt_info_t *ans =  decodeFile(target);
+	printf("Original file: %s\n", target);
 	// sprintf(length, "%d", ans->length);
 	printf("Announce: ");
 	printf(ans->announce);

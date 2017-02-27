@@ -72,30 +72,18 @@ int main(int argc, char **argv) {
 
 	else if(recieved_bytes == FULLHANDSHAKELENGTH)
 	{
-		memcpy(peer_handshake, buffer, 68);
-		test = verify_handshake(peer_handshake, sha);
-	  // Testing for issues on handshake.
-		if(test)
-		{
-			fprintf(stderr, "Error on handshake ---> %d\n", test);
-			exit(EXIT_FAILURE);
-		}
-		memset(buffer, 0, sizeof(buffer));
-		free(peer_handshake);
+		Verify_handshake(buffer, sha);
+		printf("tested new Verify\n");
 	}
 	else if( recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength)
 	{
 
+
+		Verify_handshake(buffer, sha);
+		printf("tested new Verify\n");
+
+		//If there is a bitfield option, set bitfield. 
 		char * bitfield_message = malloc(bitfieldMsgLength);
-		memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
-		test = verify_handshake(peer_handshake, sha);
-	  // Testing for issues on handshake.
-		if(test)
-		{
-			fprintf(stderr, "Error on handshake ---> %d\n", test);
-			exit(EXIT_FAILURE);
-		}
-	  //If there is a bitfield option, set bitfield. 
 		memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
 		memcpy(peerBitfield, bitfield_message+5, total_pieces);
 		memset(buffer, 0, sizeof(buffer));
@@ -150,7 +138,7 @@ int main(int argc, char **argv) {
 	}
 	//bufPtr has direct access to buffer. Reminder to not mess it up
 	//accidently. 
-	char * bufPtr = &buffer;
+	char * bufPtr = buffer;
 	int *  msgSize = malloc(4);
 	char * msgID = malloc(1);
 	//INTERPRET MESSAGES HERE.

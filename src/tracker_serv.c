@@ -7,85 +7,94 @@
 
 #include "tracker.h"
 
-void sendClients(int socket, char *peersBuffer, int numClients);
+// Global flag to enable or disable debugging print statements
+int debugging = 0;
 
 int main(int argc, char *argv[]) {
-  int listening_socket;
-  int numClients;
 
-  fprintf(stdout, "Torrent Tracker Initializing.\n");
-
-  int reuse = 1;
-  numClients = 0;
-
-  struct sockaddr_in listening_addr;
-  listening_addr.sin_family = PF_INET;
-  listening_addr.sin_port = (in_port_t)htons(TRACKER_PORT);
-  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  listening_socket = socket(PF_INET, SOCK_STREAM, 0);
-
-  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
-    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
-    exit(1);
-  }
-    
-  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
-    fprintf(stderr, "Can't bind to socket.\n");
-    exit(1);
+  // Determine if debugging command line argument is present
+  if (argc > 1) {
+    // 1 command line arg is always provided: the program name
+    int i;
+    for (i = 1; i < argc; i++) {
+      if (strncmp(argv[i], "debug", 5) == 0) {
+        printf("Debugging print statements enabled.\n");
+        debugging = 1; // Enable debugging mode
+      }
+    }
   }
 
-  if (listening_socket < 0) {
-    fprintf(stderr, "Error creating socket: error %d\n", listening_socket);
-    exit(1);
+  if (debugging){
+    printf("Torrent Tracker Initializing.\n");
   }
 
-  if (listen(listening_socket, 10) == -1) {
-    fprintf(stderr, "Can't listen.\n");
-    exit(1);
-  }
+  int numClients = 0;
+  int listening_socket = configureSocket();
 
-  printf("Waiting for connection on port %d\n", TRACKER_PORT);
+  if (debugging) {
+    printf("Waiting for connection on port %d\n", TRACKER_PORT);
+  }
 
   static struct sockaddr_storage client_address;
   static unsigned int address_size = sizeof(client_address);
   int client_socket;
 
-  char *peersBuffer = malloc(16 * MAXCLIENTS);
+  Client *c_head;
+  Client *c_tail;
 
+  // Repeatedly wait for incoming connections
   while ((client_socket = accept(listening_socket, (struct sockaddr *)&client_address, &address_size)) != -1) {
-    printf("======\n");
+    // Capture the client's IP address
     char *ip = inet_ntoa(((struct sockaddr_in *)&client_address)->sin_addr);
 
-    fprintf(stdout, "Client %s connected.\n", ip);
+    if (debugging) {
+      printf("======\n");
+      printf("Client %s connected.\n", ip);
+      if (numClients > 0) {
+        printf("Client list head: %s\n", c_head->ip);
+      }
+    }
+
+    // Char pointer to store incoming bytes
     char *recv_msg;
     recv_msg = recvMsg(client_socket);
 
     if (recv_msg[0] == 0) {
-      fprintf(stdout, "Detected client %s shutdown.\n", ip);
+      // When the client socket closes, a byte of value 0 is sent
+      if (debugging) {
+        printf("Detected client %s shutdown.\n", ip);
+      }
     } else {
       if (strncmp(recv_msg + 1, "list", 4) == 0) {
-        // Execute the "list" command
-        memcpy(peersBuffer + (numClients * 16), ip, 16);
-        numClients++;
-        fprintf(stdout, "Client %s joined, %d clients total.\n", ip, numClients);
-        sendClients(client_socket, peersBuffer, numClients);
+        // Add the client to the linked list of clients
+        if (numClients == 0) {
+          // Add client as head AND tail of linked list
+          c_head = malloc(sizeof(Client));
+          c_head->ip = strdup(ip);
+          c_head->next = 0; // Initialize next pointer to NULL
+          c_tail = c_head;
+          numClients = 1;
+        } else {
+          // Append client to end of list if it is not present
+          if (debugging) {
+            printf("Adding client if absent.\n");
+            printf("Num clients: %d\n", numClients);
+          }
+          addIfAbsent(c_head, ip, &numClients);
+          if (debugging) {
+            printf("Updated num clients: %d\n", numClients);
+          }
+        }
+        if (debugging) {
+          printf("Client %s joined, %d clients total.\n", ip, numClients);
+        }
+        // Store the ip's of every client in a buffer and send that buffer to the client
+        sendClients(client_socket, c_head, numClients);
       }
     }
     free(recv_msg);
   }
   close(client_socket);
+  destroyClientList(c_head);
   return 0;
-}
-
-void sendClients(int socket, char *peersBuffer, int numClients) {
-  // Bundle all client ip's into one message
-  char *data = malloc(1 + (16 * numClients));
-  memcpy(data, &numClients, 1);
-  int dl = 16 * numClients;
-
-  memcpy((data + 1), peersBuffer, 16 * numClients);
-
-  sendData(socket, data, dl);
-
-  fprintf(stdout, "Done sending.\n");
 }

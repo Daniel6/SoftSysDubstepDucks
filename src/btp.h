@@ -71,7 +71,7 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 #define FILE_TO_SEND    "testfile.txt"
 
 
-typedef struct connection_info{
+typedef struct connection_info {
 	/*Status
 	bit 7 = connection status
 	bit 6 = ownInterested
@@ -84,15 +84,12 @@ typedef struct connection_info{
 	int requested_piece;
 	int piece_to_send;
 	char * peerBitfield;
-
 } Connections;
 
 typedef struct node {
     int val;
     struct node *next;
 } Node;
-
-
 
 
 #include "btp.c"
@@ -114,6 +111,7 @@ char * construct_piece_message(int piece_index, int blockoffset, int piece_len, 
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
+
 Node *make_node(int val, Node *next);
 int get_val(Node *node);
 int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces);

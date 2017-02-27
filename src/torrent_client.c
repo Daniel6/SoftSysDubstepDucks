@@ -5,8 +5,10 @@
 #include <stddef.h>
 
 #include "btp.h"
+#include "file_constructor.h"
 #include "tracker.h"
 
+<<<<<<< HEAD
 int main(int argc, char ** argv) {
 
     char buffer[BUFSIZ];
