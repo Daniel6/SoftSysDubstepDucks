@@ -48,6 +48,12 @@
 #define REQUESTMSGSIZE 17
 #define CANCELMSGSIZE 17
 
+#define CONNECTION_STATUS 7
+#define OWNINTERESTED 6
+#define OWNCHOKED 5
+#define PEERINTERESTED 4
+#define PEERCHOKE 3
+#define PENDINGREQUEST 2
 
 //Maximums
 #define MAX_BACKLOGSIZE 10
@@ -65,22 +71,28 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 #define FILE_TO_SEND    "testfile.txt"
 
 
-struct connection_info{
-	char ownInterested;
-	char ownChoked;
-	char peerInterested;
-	char peerChoked;
+typedef struct connection_inf{
+	/*Status
+	bit 7 = connection status
+	bit 6 = ownInterested
+	bit 5 = ownChoke
+	bit 4 = peerInterested
+	bit 3 = peerChoke
+	bit 2 = pending request
+	*/
+	char status_flags;
+	int requested_piece;
+	int piece_to_send;
 	char * peerBitfield;
-	int sent_request;
-};
-
+	
+} connection_info;
 
 
 
 #include "btp.c"
 
 //Inherent assumption that hash and char are length 20 arrays. 
-void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_inf_file);
+void initialize_connection(connection_info* connection_to_initialize, int total_pieces_inf_file);
 char* construct_handshake(char * hash, char * id);
 int server_socket_wrapper(struct sockaddr_in * server_addr, char * server_address, int port_number);
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number);
@@ -95,8 +107,7 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
-
-
+void Verify_handshake(char* buffer, char * file_sha);
 
 
 
