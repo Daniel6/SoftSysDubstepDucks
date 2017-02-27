@@ -39,7 +39,7 @@ int main(int argc, char ** argv)
 
 	//Parse tracker info
 
-	 char *tracker_ip = "10.7.8.50";
+	 char *tracker_ip = "10.7.24.69";
 	 printf("Tracker IP set to: %s\n", tracker_ip);
 	 printf("%s\n", tracker_ip);
 	//char *tracker_ip = malloc(16);

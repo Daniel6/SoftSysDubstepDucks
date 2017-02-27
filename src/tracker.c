@@ -170,8 +170,10 @@ int configureSocket() {
 /*
   Given a linked list of clients, write their ip's to a buffer and send
   it over the socket given.
+
+  Does not include the ignore_ip in the message.
 */
-void sendClients(int socket, Client *head, int numClients) {
+void sendClients(int socket, Client *head, int numClients, char *ignore_ip) {
   if (numClients <= 0) {
     // Do not attempt to send no clients
     return;
@@ -199,7 +201,9 @@ void sendClients(int socket, Client *head, int numClients) {
   curr_node = head;
   // Copy all ip's into data buffer for sending
   for (i = 0; i < numClients; i++) {
-    memcpy(data + 1 + (IP_SIZE * i), curr_node->ip, IP_SIZE);
+    if (strcmp(curr_node->ip, ignore_ip) != 0) {
+      memcpy(data + 1 + (IP_SIZE * i), curr_node->ip, IP_SIZE);
+    }
     curr_node = curr_node->next;
   }
 
