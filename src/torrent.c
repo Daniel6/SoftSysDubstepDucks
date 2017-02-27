@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     printf("%d\n", (*num_of_peers)*16);
 	char *peers [MAX_PEERS];
   	for (j = 0; j < *num_of_peers; j++) {
-   		peers[j] = malloc(16);
+   		peers[j] = calloc(16,1);
   		memcpy(peers[j], peer_buf + (16 * j), 16);
   	}
   	
@@ -114,14 +114,15 @@ int main(int argc, char *argv[]) {
 		// Create a new socket address from peer -> do we need this? Might not.
 		// Mostly because of the fact tahat we rewrite peers. But just in case.
 		struct sockaddr_in *remote_addr = &peer[i];
+		printf("%s\n", peers[i]);
 		int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, peers[i], LISTENER_PORT_NUMBER);
 		fds[i+1].fd = client_socket;
 		fds[i+1].events = POLLIN | POLLOUT;
 		//Initialize the associated connecti
-		initialize_connection(&connections[i], total_pieces_in_file);
+		initialize_connection(&connections[i], total_pieces_in_file);		
 
 		/* Connect to the server */
-		if (connect(client_socket,  &remote_addr, sizeof(struct sockaddr)) == -1) {
+		if (connect(client_socket,  (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) == -1) {
 			fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -168,7 +169,6 @@ int main(int argc, char *argv[]) {
 	}
 
 
-	printf("hello\n");
 	int* test = malloc(4);
 	int *piece_index = malloc(4);
 

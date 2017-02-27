@@ -9,15 +9,20 @@ int configure_socket() {
   listening_addr.sin_port = (in_port_t)htons(30000);
   listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
-    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
-    exit(1);
-  }
+    if(setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
+        fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
+        exit(1);
+    }
     
-  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
-    fprintf(stderr, "Can't bind to socket.\n");
-    exit(1);
-  }
+    if(bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
+        fprintf(stderr, "Can't bind to socket.\n");
+        exit(1);
+    }
+    if ((listen(listening_socket, 10)) == -1) {
+        fprintf(stderr, "Error on listen --> %s", strerror(errno));
+        exit(1);
+    }
+
 }
 
 
