@@ -70,7 +70,7 @@ The tracker server was improved in the final iteration to no longer accept dupli
 
 *Given a torrent file, all relevant meta file information is extracted*
 
-### Learning Objectives
+## Learning Objectives
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being to:
 
 * Learn about networking in C and how messages are handled on a low level
