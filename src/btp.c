@@ -20,9 +20,13 @@ int configure_socket() {
   }
 }
 
-
-//Sets up a socket to ping other clients with. 
-
+/*
+ * Set up and return a socket for communicating with other clients.
+ *
+ * remote_addr: address to connect to
+ * server_address: address of the server
+ * port_number: port of the connection
+ */
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number){
   /* Zeroing remote_addr struct */
     memset(remote_addr, 0, sizeof(struct sockaddr_in));
@@ -36,8 +40,6 @@ int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_addres
         fprintf(stderr, "Error creating socket --> %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
-
-
     return client_socket;
 }
 
@@ -491,7 +493,13 @@ int read_in(int socket, char *buf, int len) {
 
 
 
-
+/*
+ * Create and return a char* bitfield message
+ *
+ * buffer: 
+ * bitfieldMsgLength: int length of the BITFIELD message
+ * total_pieces: int of total number of pieces in the file
+ */
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
 {
     char * bitfield_message = malloc(bitfieldMsgLength);
@@ -499,6 +507,12 @@ char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
     return bitfield_message;
 }
 
+/*
+ * Send an INTERESTED message to a given client socket
+ *
+ * client_socket: fd of the socket to send to
+ * connection: pointer to Connections for the given client
+ */
 void Send_interested(int client_socket, Connections* connection)
 {
     char * interested = construct_state_message(INTERESTED);
@@ -511,6 +525,12 @@ void Send_interested(int client_socket, Connections* connection)
     free(interested);
 }
 
+/*
+ * Send an UNINTERESTED message to a given client socket
+ *
+ * client_socket: fd of the socket to send to
+ * connection: pointer to Connections for the given client
+ */
 void Send_uninterested(int client_socket, Connections* connection)
 {
     connection->status_flags |= 0<<OWNINTERESTED;
@@ -522,6 +542,12 @@ void Send_uninterested(int client_socket, Connections* connection)
     free(uninterested); 
 }
 
+/*
+ * Send an UNCHOKED message to a given client socket
+ *
+ * client_socket: fd of the socket to send to
+ * connection: pointer to Connections for the given client
+ */
 void Send_unchoked(int client_socket, Connections* connection)
 {
     connection->status_flags |= 0<<PEERCHOKE;
@@ -533,6 +559,13 @@ void Send_unchoked(int client_socket, Connections* connection)
     free(unchoke); 
 }
 
+/*
+ * Send a REQUEST message to a given client socket
+ *
+ * client_socket: fd of the socket to send to
+ * connection: pointer to Connections for the given client
+ * piece_index: index of the piece to request
+ */
 void Send_request(int client_socket, Connections* connection, int piece_index) {
    char *request = construct_request_message(piece_index, 0, 0);
    if(send(client_socket, request, REQUESTMSGSIZE, 0) == -1){
@@ -544,7 +577,16 @@ void Send_request(int client_socket, Connections* connection, int piece_index) {
     free(request); 
 }
 
-void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len) {
+/*
+ * Send a PIECE message to a given client socket
+ *
+ * client_socket: fd of the socket to send to
+ * connection: pointer to Connections for the given client
+ * piece_index: index of the piece to send
+ * file_d: fd of the file to get the piece from
+ * piece_len: length of the piece
+ */
+void Send_piece(int client_socket, Connections *connection, int piece_index, int file_d, int piece_len) {
    char *piece = get_piece_from_file(file_d, piece_index, piece_len);
    char *piece_msg = construct_piece_message(piece_index, 0, piece_len, piece);
    if(send(client_socket, piece_msg, 13 + piece_len, 0) == -1) {
@@ -556,9 +598,16 @@ void Send_piece(int client_socket, Connections* connection, int piece_index, int
     free(piece_msg); 
 }
 
+/*
+ * Set a given flag in the Connections data structure's status_flag bitfield
+ *
+ * connection: Connections data structure to set the flag of
+ * flag: int representing which flag in the status_flag to set
+ * state: int of what to set flag to
+ */
 void Set_Flag(Connections* connection, int flag, int state)
 {
-    if(state ==1)
+    if(state == 1)
         connection->status_flags |= 1<<flag;
     else if(state==0)
         connection->status_flags &= 0<<flag;
