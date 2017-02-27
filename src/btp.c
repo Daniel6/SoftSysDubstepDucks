@@ -303,6 +303,11 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
 
 //Parses the buffer for the next msg , assuming there is no corruption in the buffer. 
 //This has no error handlign right now. 
+/*
+ * Parses a buffer to extract information about the message it stores.
+ *
+ * 
+ */
 char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
 {
 
@@ -317,7 +322,14 @@ char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
   return message;
 }
 
-
+/*
+ * Compare two buffers, returning 1 if the peer's buffer has high
+ * bits that the own buffer does not have high.
+ *
+ * peer_buffer: a peer's buffer, to be checked for existence of bits not in own_buffer
+ * own_buffer: your own buffer
+ * bit_pieces: number of bits to compare in the two buffers
+ */
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_pieces)
 {
     int x;
@@ -336,7 +348,13 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
     return 0;
 }
 
-
+/*
+ * Initialize a Connections with the standard default flag values
+ *
+ * connection_to_initialize: pointer to the Connections to be initialized
+ * total_pieces_in_file: number of pieces in the file that this Connections
+ *                       will be torrenting
+ */
 void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file)
 {
     //Connection status
@@ -354,6 +372,13 @@ void initialize_connection(Connections* connection_to_initialize, int total_piec
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }
 
+/*
+ * Verifies a handshake against a SHA hash of a file.
+ * Exits if the handshake is not verified.
+ *
+ * buffer: char buffer containing a HANDSHAKE message sent from a peer
+ * file_sha: SHA to verify against
+ */
 void Verify_handshake(char* buffer, char * file_sha)
 {
     int test;    
@@ -501,7 +526,7 @@ int read_in(int socket, char *buf, int len) {
 /*
  * Create and return a char* bitfield message
  *
- * buffer: 
+ * buffer: buffer containing the message
  * bitfieldMsgLength: int length of the BITFIELD message
  * total_pieces: int of total number of pieces in the file
  */
