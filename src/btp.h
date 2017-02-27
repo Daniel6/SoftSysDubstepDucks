@@ -22,7 +22,6 @@
 
 #include "bencode.c"
 #include "bencode.h"
-
 //Defining bool types.
 #define TRUE 0
 #define FALSE 1
@@ -48,9 +47,9 @@
 #define REQUESTMSGSIZE 17
 #define CANCELMSGSIZE 17
 
-#define CONNECTION_STATUS 7
+#define CONNECTIONSTATUS 7
 #define OWNINTERESTED 6
-#define OWNCHOKED 5
+#define OWNCHOKE 5
 #define PEERINTERESTED 4
 #define PEERCHOKE 3
 #define PENDINGREQUEST 2
@@ -71,7 +70,7 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 #define FILE_TO_SEND    "testfile.txt"
 
 
-typedef struct connection_inf{
+typedef struct connection_info {
 	/*Status
 	bit 7 = connection status
 	bit 6 = ownInterested
@@ -84,15 +83,18 @@ typedef struct connection_inf{
 	int requested_piece;
 	int piece_to_send;
 	char * peerBitfield;
-	
-} connection_info;
+} Connections;
 
+typedef struct node {
+    int val;
+    struct node *next;
+} Node;
 
 
 #include "btp.c"
 
 //Inherent assumption that hash and char are length 20 arrays. 
-void initialize_connection(connection_info* connection_to_initialize, int total_pieces_inf_file);
+void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file);
 char* construct_handshake(char * hash, char * id);
 int server_socket_wrapper(struct sockaddr_in * server_addr, char * server_address, int port_number);
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number);
@@ -104,11 +106,28 @@ char * construct_bitfield_message(char * bitfield, int bitfieldLen);
 char * construct_state_message(unsigned char msgID);
 char * construct_have_message(int piece_index);
 char * construct_request_message(int piece_index, int blockoffset, int blocklength);
+char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece);
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
 void print_bits ( void* buf, size_t size_in_bytes );
-void Verify_handshake(char* buffer, char * file_sha);
 
+Node *make_node(int val, Node *next);
+int get_val(Node *node);
+Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces);
+char *get_piece_from_file(int fd, int piece_num, int piece_len);
+void error(char *msg);
+int say(int socket, char *s);
+int read_in(int socket, char *buf, int len);
+
+int configure_socket();
+void Verify_handshake(char* buffer, char * file_sha);
+char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces);
+void Send_interested(int client_socket, Connections* connection);
+void Send_uninterested(int client_socket, Connections* connection);
+void Send_unchoked(int client_socket, Connections* connection);
+void Send_request(int client_socket, Connections* connection, int piece_index);
+void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len);
+void Set_Flag(Connections* connection, int flag, int state);
 
 
 #endif //BTP_H_

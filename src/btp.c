@@ -1,44 +1,28 @@
 #include "btp.h"
 
-//Sets up a server socket for listening. 
-int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_address, int port_number)
-    {
-    //Create + test socket. 
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1) {
-    fprintf(stderr, "Error creating socket --> %s", strerror(errno));
-    exit(EXIT_FAILURE);
-     }
-    int sock_len = sizeof(struct sockaddr_in);
-    /* Zeroing server_addr struct */
-    memset(server_addr_p, 0, sizeof(*server_addr_p));
-    server_addr_p->sin_family = AF_INET;
-    inet_pton(AF_INET, server_address, &(server_addr_p->sin_addr));
-    server_addr_p->sin_port = htons(port_number);
+int configure_socket() {
+  int reuse = 1;
+  int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
 
-    /*This setting options to allow for reuse of port from other clients. 
-    Basically making the port not sticky lol*/
-    int reuse = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1){
-      fprintf(stderr, "Error on setting option --> %s", strerror(errno));
-    }
+  struct sockaddr_in listening_addr;
+  listening_addr.sin_family = PF_INET;
+  listening_addr.sin_port = (in_port_t)htons(30000);
+  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    /* Bind */
-    if ((bind(server_socket, server_addr_p, sock_len)) == -1) {
-      fprintf(stderr, "Error on bind --> %s", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-
-    /* Listening to incoming connections */
-    if ((listen(server_socket, MAX_BACKLOGSIZE)) == -1) {
-      fprintf(stderr, "Error on listen --> %s", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
-
-    return server_socket;
+  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
+    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
+    exit(1);
+  }
+    
+  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
+    fprintf(stderr, "Can't bind to socket.\n");
+    exit(1);
+  }
 }
 
+
 //Sets up a socket to ping other clients with. 
+
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number){
   /* Zeroing remote_addr struct */
     memset(remote_addr, 0, sizeof(struct sockaddr_in));
@@ -253,6 +237,33 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
     return msg;
 }
 
+char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece)
+{
+    //MsgLen = 4 bytes for msg_len 1 for msgID, 8 for piece, block_off
+    char * msg = malloc(13 + piece_len);
+    int * msgLen = malloc(4);
+    *msgLen = 9 + piece_len;
+    int * piece_id = malloc(4);
+    int * block_off = malloc(4);
+    char * msgID = malloc(1);
+
+    *msgID = PIECE;
+    *piece_id = piece_index;
+    *block_off = blockoffset;
+    memcpy(msg, msgLen, 4);
+    memcpy(msg+4, msgID, 1);
+    memcpy(msg+5, piece_id, 4);
+    memcpy(msg+9, block_off, 4);
+    memcpy(msg+13, piece, piece_len);
+
+
+    free(msgLen);
+    free(msgID);
+    free(piece_id);
+    free(block_off);
+    return msg;
+}
+
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength)
 {
     //MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
@@ -319,7 +330,7 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 }
 
 
-void initialize_connection(connection_info* connection_to_initialize, int total_pieces_in_file)
+void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file)
 {
     //Connection status
     char initial = 0<<7| //Connection status = 0
@@ -351,6 +362,136 @@ void Verify_handshake(char* buffer, char * file_sha)
 }
 
 
+
+/*
+ * Get a piece from a file
+ *
+ * fd: file descriptor
+ * piece_num: which piece to get from the file (0 indexed)
+ * piece_len: length of pieces
+ *
+ * returns: char array of the piece data
+ */
+char *get_piece_from_file(int fd, int piece_num, int piece_len) {
+
+    char buffer[piece_len];
+    // seek to correct position in the file
+    if (lseek(fd, piece_num * piece_len, SEEK_SET) < 0){
+        // error seeking
+        exit(-1);
+    }
+
+    // read from file into buffer
+    if (read(fd, buffer, piece_len) != piece_len) {
+        exit(-1);
+    }
+
+    printf("%s\n", buffer);
+    //char *piece = (char *) mallloc(sizeof(char) * piece_len);
+    return strcpy(malloc(sizeof(char) * piece_len), buffer);
+    //return piece;
+}
+
+
+/* Makes a new Linked List node structure.
+ *  
+ * val: value to store in the node.
+ * next: pointer to the next node
+ * 
+ * returns: pointer to a new node
+ */
+Node *make_node(int val, Node *next) {
+    Node *node = malloc(sizeof(Node));
+    node->val = val;
+    node->next = next;
+    return node;
+}
+
+/*
+ * Returns the value of a Node.
+ * 
+ * node: node to get value from
+ *
+ * returns: int that is the value of node
+ */
+int get_val(Node *node) {
+    return node->val;
+}
+
+
+/*
+ * Determine what pieces should be requested from which peers
+ *
+ * connections: a list of peer connections
+ * num_connections: total number of connections
+ *
+ * returns: head of a Linked List, where value is piece number
+ *          and the order of the nodes is the order of the peers
+ *          in connections
+ */
+Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces) {
+    Node *head = make_node(-1, NULL);
+    Node *curr = head;
+
+    // assign a piece to every peer connections
+    for (int i = 0; i < num_connections; i++) {
+        // set value of ith node to piece number that 
+        // should be requested from ith peer connection
+        curr->val = get_piece(connections[i].peerBitfield, piece_statuses, num_pieces);
+
+        if (i != num_connections - 1) {
+            // don't make a new next node if
+            // this is the last connection
+            curr->next = make_node(-1, NULL);
+            *curr = *(curr->next);
+        }
+    }
+
+    return head;
+}
+
+void error(char *msg) {
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(1);
+}
+
+int say(int socket, char *s) {
+    int result = send(socket, s, strlen(s), 0);
+    if (result == -1) {
+        // don't call error()
+        // don't want to stop server if there's a problem with just one client
+        fprintf(stderr, "%s: %s\n", "Error talking to the client", strerror(errno));
+    }
+    return result;
+}
+
+int read_in(int socket, char *buf, int len) {
+    char *s = buf;
+    int slen = len;
+    int c = recv(socket, s, slen, 0);
+    // keep reading until no more chars or reach '\n'
+    while ((c > 0) && (s[c-1] != '\n')) {
+        s += c;
+        slen -= c;
+        c = recv(socket, s, slen, 0);
+    }
+    if (c < 0) {
+        // in case there's an error
+        return c;
+    } else if (c == 0) {
+        // nothing read, so send an empty string
+        buf[0] = '\0';
+    } else {
+        // replace '\r' with '\0'
+        s[c-1]='\0';
+    }
+    return len - slen;
+}
+
+
+
+
+
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
 {
     char * bitfield_message = malloc(bitfieldMsgLength);
@@ -358,7 +499,7 @@ char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
     return bitfield_message;
 }
 
-void Send_interested(int client_socket, connection_info *connection)
+void Send_interested(int client_socket, Connections* connection)
 {
     char * interested = construct_state_message(INTERESTED);
     connection->status_flags |= 1<<OWNINTERESTED;
@@ -370,7 +511,7 @@ void Send_interested(int client_socket, connection_info *connection)
     free(interested);
 }
 
-void Send_uninterested(int client_socket, connection_info* connection)
+void Send_uninterested(int client_socket, Connections* connection)
 {
     connection->status_flags |= 0<<OWNINTERESTED;
     char * uninterested = construct_state_message(UNINTERESTED);
@@ -379,4 +520,48 @@ void Send_uninterested(int client_socket, connection_info* connection)
         exit(EXIT_FAILURE);
     }
     free(uninterested); 
+}
+
+void Send_unchoked(int client_socket, Connections* connection)
+{
+    connection->status_flags |= 0<<PEERCHOKE;
+    char * unchoke = construct_state_message(UNCHOKE);
+    if(send(client_socket, unchoke, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(unchoke); 
+}
+
+void Send_request(int client_socket, Connections* connection, int piece_index) {
+   char *request = construct_request_message(piece_index, 0, 0);
+   if(send(client_socket, request, REQUESTMSGSIZE, 0) == -1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    connection->status_flags |= 1<<PENDINGREQUEST;
+    connection->requested_piece = piece_index;
+    free(request); 
+}
+
+void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len) {
+   char *piece = get_piece_from_file(file_d, piece_index, piece_len);
+   char *piece_msg = construct_piece_message(piece_index, 0, piece_len, piece);
+   if(send(client_socket, piece_msg, 13 + piece_len, 0) == -1) {
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    connection->status_flags |= 1<<PENDINGREQUEST;
+    connection->requested_piece = piece_index;
+    free(piece_msg); 
+}
+
+void Set_Flag(Connections* connection, int flag, int state)
+{
+    if(state ==1)
+        connection->status_flags |= 1<<flag;
+    else if(state==0)
+        connection->status_flags &= 0<<flag;
+    else
+        printf("Bad State");
 }
