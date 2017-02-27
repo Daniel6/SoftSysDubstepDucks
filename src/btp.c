@@ -18,6 +18,11 @@ int configure_socket() {
     fprintf(stderr, "Can't bind to socket.\n");
     exit(1);
   }
+
+    if ((listen(listening_socket, 10)) == -1) {
+        fprintf(stderr, "Error on listen --> %s", strerror(errno));
+        exit(1);
+    }
 }
 
 
