@@ -365,11 +365,7 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 }
 
 
-<<<<<<< HEAD
 void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file)
-=======
-void initialize_connection(connection_info* connection_to_initialize, int total_pieces_in_file)
->>>>>>> 534833109ea374fa28818641f5b05f44fb1bb411
 {
     //Connection status
     char initial = 0<<7| //Connection status = 0
