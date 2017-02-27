@@ -15,9 +15,7 @@ typedef struct connection_info{
 	char peerChoked;
 	char *peerBitfield;
 	int requested_piece;
-	int received;
 	int piece_to_send;
-	int sent;
 } Connections;
 
 int main(int argc, char *argv[]) {
@@ -25,6 +23,8 @@ int main(int argc, char *argv[]) {
 	Connections connections_list[10];
 	struct sock_in peer[MAX_PEERS];
 	struct pollfd fds[MAX_CONNECTIONS];
+
+	char *my_bitfield;
 
 
 
@@ -99,10 +99,10 @@ int main(int argc, char *argv[]) {
 					fprintf(stderr, "Error reading from peer server\n");
 				} else if (bytes_received == 0) {
 					fprintf(stderr, "Peer server %i dropped connection\n", i);
-
 					// close this socket
 					close(fds[i].fd);
 					fds[i].fd = -1;
+					connections[i].connected = 0;
 				} else if (bytes_received == FULLHANDSHAKELENGTH) {
 					// handle handshake
 				} else {
@@ -118,19 +118,19 @@ int main(int argc, char *argv[]) {
                     // respond accordingly
                     switch(*msgID) {
                         case(CHOKE):
-                            connections[i].ownChoked = 1;
+                            connections[i]->ownChoked = 1;
                             printf("I am choked\n");
                             break;
                         case(UNCHOKE):
-                            connections[i].ownChoked = 0;
+                            connections[i]->ownChoked = 0;
                             printf("I am unchoked\n");
                             break;
                         case(INTERESTED):
-                            connections[i].peerInterested = 1;
+                            connections[i]->peerInterested = 1;
                             printf("Peer is interested\n");            
                             break;
                         case(UNINTERESTED):
-                            connections[i].peerInterested = 0;
+                            connections[i]->peerInterested = 0;
                             printf("Peer is uninterested\n");
                             break;
                         case(HAVE):
@@ -149,14 +149,15 @@ int main(int argc, char *argv[]) {
                             break;
                         case(BITFIELD):
                             //Technically this should never happen. 
-                            memcpy(peerBitfield, msg1+5, total_pieces);
+                            memcpy(connections[i]->bitfield, msg1+5, total_pieces);
                             printf("bitfield tho\n");
                             break;
                         case(REQUEST):
 
                             // Some kind of way to put on queue this send command. 
-                        	int piece = 0;
-                        	connections[i].piece_to_send = piece;
+                        	int piece_index;
+                        	memcpy(&(piece_index), msg1 + 5, 4);
+                        	connections[i]->piece_to_send = piece_index;
                         	int sent = 0;
                             printf("request tho\n");
                             break;              
@@ -168,19 +169,18 @@ int main(int argc, char *argv[]) {
                         	char *piece = 
                         	if (verify_piece()) {
                         		write_piece(main_fd, piece_index, piece_size_bytes, char *buffer);
-                            	connections[i].received = 1;
+                            	connections[i]->received = 1;
                         	}
                             printf("piece tho\n");
                             break;
                         case(CANCEL):
                             // Need to cancel the queue reponse. 
                         	int piece = 0;
-                        	connections[i].piece_to_send = -1;
+                        	connections[i]->piece_to_send = -1;
                         	int sent = 0;
                             printf("cancel tho\n");
                             break;
                         default:
-                        ;
                     }
                     recieved_bytes -= *msgSize;
                     free(msg1); 
@@ -188,7 +188,53 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (fds[i].revents & POLLOUT) {
+				// if we have requested a piece:
+					// check if they have requested a piece
+				// if we haven't requested a piece:
+					// send an interested message
 
+				if (connections[i]->pending_request) {
+					// we already requested from them, waiting for it to be sent
+					// so we should send them something if they are interested
+
+					if (!connections[i]->sent) {
+						// we have not sent them anything so check steps
+						// necessary to send something
+
+						if (connections[i]->peerInterested) {
+							if (!connections[i]->choked) {
+								if (connections[i]->piece_to_send >= 0) {
+									// they are interested, unchoked, and have
+									// requested a piece, so send a piece message
+
+								}
+							} else {
+								// they are interested but choked, so unchoke them
+							}
+						}
+					}
+					
+
+
+				} else {
+					// we haven't requested anything
+					// do they have a piece we need??
+					// if so:
+					// if choked 
+						// send interested
+					// else
+						// if interested
+							// send request
+						// else 
+							// send interested
+					if (connections[i]->choked) {
+						// we are choked, so ask them to unchoke
+						// by sending an interested message
+
+					} else {
+						// we are unchoked so 
+					}
+				}
 			}
 
 		}
