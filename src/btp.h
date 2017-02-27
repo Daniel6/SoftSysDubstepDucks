@@ -22,7 +22,6 @@
 
 #include "bencode.c"
 #include "bencode.h"
-
 //Defining bool types.
 #define TRUE 0
 #define FALSE 1
@@ -114,22 +113,20 @@ void print_bits ( void* buf, size_t size_in_bytes );
 
 Node *make_node(int val, Node *next);
 int get_val(Node *node);
-int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces);
 Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces);
 char *get_piece_from_file(int fd, int piece_num, int piece_len);
-void write_piece(int fd, int piece_num, int piece_len, char *buffer);
 void error(char *msg);
 int say(int socket, char *s);
 int read_in(int socket, char *buf, int len);
 
-int configureSocket();
+int configure_socket();
 void Verify_handshake(char* buffer, char * file_sha);
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces);
 void Send_interested(int client_socket, Connections* connection);
 void Send_uninterested(int client_socket, Connections* connection);
 void Send_unchoked(int client_socket, Connections* connection);
 void Send_request(int client_socket, Connections* connection, int piece_index);
-void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len)
+void Send_piece(int client_socket, Connections* connection, int piece_index, int file_d, int piece_len);
 void Set_Flag(Connections* connection, int flag, int state);
 
 

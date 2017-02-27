@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
   	int j;
 	int i;
 
-	char file_name[] = "moby_dick.txt.torrent";
+	char file_name[] = "testfile.txt.torrent";
 	bt_info_t *ans = decodeFile(file_name);
 
 	int file_destination;

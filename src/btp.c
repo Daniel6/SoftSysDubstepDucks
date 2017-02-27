@@ -1,6 +1,6 @@
 #include "btp.h"
 
-int configureSocket() {
+int configure_socket() {
   int reuse = 1;
   int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
 
@@ -18,41 +18,6 @@ int configureSocket() {
     fprintf(stderr, "Can't bind to socket.\n");
     exit(1);
   }
-
-//Sets up a server socket for listening. 
-int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_address, int port_number)
-    {
-    //Create + test socket. 
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1) {
-    fprintf(stderr, "Error creating socket --> %s", strerror(errno));
-    exit(EXIT_FAILURE);
-     }
-    int sock_len = sizeof(struct sockaddr_in);
-    /* Zeroing server_addr struct */
-    memset(server_addr_p, 0, sizeof(*server_addr_p));
-    server_addr_p->sin_family = AF_INET;
-    inet_pton(AF_INET, server_address, &(server_addr_p->sin_addr));
-    server_addr_p->sin_port = htons(port_number);
-
-    /*This setting options to allow for reuse of port from other clients. 
-    Basically making the port not sticky lol*/
-    int reuse = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1){
-      fprintf(stderr, "Error on setting option --> %s", strerror(errno));
-    }
-
-  if (listening_socket < 0) {
-    fprintf(stderr, "Error creating socket: error %d\n", listening_socket);
-    exit(1);
-  }
-
-  if (listen(listening_socket, 10) == -1) {
-    fprintf(stderr, "Can't listen.\n");
-    exit(1);
-  }
-
-  return listening_socket;
 }
 
 
@@ -397,14 +362,7 @@ void Verify_handshake(char* buffer, char * file_sha)
 }
 
 
-char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
-{
-    char * bitfield_message = malloc(bitfieldMsgLength);
-    memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
-    return bitfield_message;
-}
 
-<<<<<<< HEAD
 /*
  * Get a piece from a file
  *
@@ -434,27 +392,6 @@ char *get_piece_from_file(int fd, int piece_num, int piece_len) {
     //return piece;
 }
 
-/*
- * Write to a file from a buffer
- *
- * fd: file descriptor
- * piece_num: what number piece will be written
- * piece_len: length of the piece being written
- * buffer: char array of what will be written
- */
-void write_piece(int fd, int piece_num, int piece_len, char *buffer) {
-    // seek to correct position in the file
-    if (lseek(fd, piece_num * piece_len, SEEK_SET) < 0){
-        // error seeking
-        exit(-1);
-        return;
-    }
-
-    if (write(fd, strcat(buffer, "\n"), piece_len) != piece_len) {
-        printf("Success writing to the file!!!!!\n");
-        return;
-    }
-}
 
 /* Makes a new Linked List node structure.
  *  
@@ -479,28 +416,6 @@ Node *make_node(int val, Node *next) {
  */
 int get_val(Node *node) {
     return node->val;
-}
-
-/*
- * Given a peer's bitfield and an array of client's (your) current piece statuses,
- * return the first piece the peer has that you have not requested.
- *
- * peer_bitfield: array containing bits representing if the peer has a piece
- * pieces: client's current request/have statuses of pieces
- *
- * returns: piece number that should be requested from peer
- */
-int get_piece(char *peer_bitfield, int piece_statuses[], int num_pieces) {
-    for (int i = 0; i < num_pieces; i++) {
-        if (!piece_statuses[i] && peer_bitfield[i]) {
-            // if client has not yet requested the piece
-            // and the peer has the piece, request that
-            // piece
-            return i;
-        }
-    }
-
-    return -1;
 }
 
 
@@ -575,22 +490,6 @@ int read_in(int socket, char *buf, int len) {
 
 
 
-
-
-
-void Verify_handshake(char* buffer, char * file_sha)
-{
-    int test;    
-    char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
-    memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
-    test = verify_handshake(peer_handshake, file_sha);
-    if(test){
-        fprintf(stderr, "Error on handshake ---> %d\n", test);
-        exit(EXIT_FAILURE);
-    }
-    memset(buffer, 0, sizeof(buffer));
-    free(peer_handshake);    
-}
 
 
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
