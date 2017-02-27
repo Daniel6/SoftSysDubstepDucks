@@ -48,6 +48,12 @@
 #define REQUESTMSGSIZE 17
 #define CANCELMSGSIZE 17
 
+#define CONNECTIONSTATUS 7
+#define OWNINTERESTED 6
+#define OWNCHOKE 5
+#define PEERINTERESTED 4
+#define PEERCHOKE 3
+#define PENDINGREQUEST 2
 
 //Maximums
 #define MAX_BACKLOGSIZE 10
@@ -66,12 +72,19 @@ const unsigned int FULLHANDSHAKELENGTH = 68;
 
 
 typedef struct connection_info{
-	char ownInterested;
-	char ownChoked;
-	char peerInterested;
-	char peerChoked;
+	/*Status
+	bit 7 = connection status
+	bit 6 = ownInterested
+	bit 5 = ownChoke
+	bit 4 = peerInterested
+	bit 3 = peerChoke
+	bit 2 = pending request
+	*/
+	char status_flags;
+	int requested_piece;
+	int piece_to_send;
 	char * peerBitfield;
-	int sent_request;
+
 } Connections;
 
 typedef struct node {
@@ -85,7 +98,7 @@ typedef struct node {
 #include "btp.c"
 
 //Inherent assumption that hash and char are length 20 arrays. 
-void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_inf_file);
+void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file);
 char* construct_handshake(char * hash, char * id);
 int server_socket_wrapper(struct sockaddr_in * server_addr, char * server_address, int port_number);
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number);
@@ -109,6 +122,13 @@ void write_piece(int fd, int piece_num, int piece_len, char *buffer);
 void error(char *msg);
 int say(int socket, char *s);
 int read_in(int socket, char *buf, int len);
+
+int configureSocket();
+void Verify_handshake(char* buffer, char * file_sha);
+char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces);
+void Send_interested(int client_socket, Connections* connection);
+void Send_uninterested(int client_socket, Connections* connection);
+void Set_Flag(Connections* connection, int flag, int state);
 
 
 #endif //BTP_H_

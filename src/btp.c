@@ -1,40 +1,38 @@
 #include "btp.h"
 
 
-int server_socket_wrapper(struct sockaddr_in *server_addr_p, char * server_address, int port_number)
-    {
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket == -1) {
-    fprintf(stderr, "Error creating socket --> %s", strerror(errno));
-    exit(EXIT_FAILURE);
-     }
-    int sock_len = sizeof(struct sockaddr_in);
-    /* Zeroing server_addr struct */
-    memset(server_addr_p, 0, sizeof(*server_addr_p));
-    server_addr_p->sin_family = AF_INET;
-    inet_pton(AF_INET, server_address, &(server_addr_p->sin_addr));
-    server_addr_p->sin_port = htons(port_number);
-    /*This setting options to allow for reuse of port from other clients. 
-    Basically making the port not sticky lol*/
-    int reuse = 1;
-    if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1){
-      fprintf(stderr, "Error on setting option --> %s", strerror(errno));
-    }
+int configureSocket() {
+  int reuse = 1;
+  int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
 
-    /* Bind */
-    if ((bind(server_socket, server_addr_p, sock_len)) == -1) {
-      fprintf(stderr, "Error on bind --> %s", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
+  struct sockaddr_in listening_addr;
+  listening_addr.sin_family = PF_INET;
+  listening_addr.sin_port = (in_port_t)htons(30000);
+  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    /* Listening to incoming connections */
-    if ((listen(server_socket, MAX_BACKLOGSIZE)) == -1) {
-      fprintf(stderr, "Error on listen --> %s", strerror(errno));
-      exit(EXIT_FAILURE);
-    }
+  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
+    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
+    exit(1);
+  }
+    
+  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
+    fprintf(stderr, "Can't bind to socket.\n");
+    exit(1);
+  }
 
-    return server_socket;
+  if (listening_socket < 0) {
+    fprintf(stderr, "Error creating socket: error %d\n", listening_socket);
+    exit(1);
+  }
+
+  if (listen(listening_socket, 10) == -1) {
+    fprintf(stderr, "Can't listen.\n");
+    exit(1);
+  }
+
+  return listening_socket;
 }
+
 
 int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number){
   /* Zeroing remote_addr struct */
@@ -305,16 +303,23 @@ int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bit_
 }
 
 
-void initialize_connection(struct connection_info* connection_to_initialize, int total_pieces_in_file)
+void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file)
 {
-    connection_to_initialize->ownInterested = FALSE;
-    connection_to_initialize->ownChoked = TRUE;
-    connection_to_initialize->peerInterested = FALSE;
-    connection_to_initialize->peerChoked = TRUE;
-    connection_to_initialize->sent_request = NOREQUEST;
+    //Connection status
+    char initial = 0<<7| //Connection status = 0
+                   0<<6| //ownInterested = 0
+                   1<<5| //ownChoke = 1
+                   0<<4| //peerInterested = 0
+                   1<<3| //PeerChoked = 1
+                   0<<2;//Pending Request
+
+    connection_to_initialize->status_flags |=initial;
+    connection_to_initialize->requested_piece = -1;
+    connection_to_initialize->piece_to_send = -1;
     connection_to_initialize->peerBitfield = malloc(total_pieces_in_file/8);
     memset(connection_to_initialize->peerBitfield, 0,total_pieces_in_file/8);
 }
+
 
 /*
  * Get a piece from a file
@@ -485,36 +490,62 @@ int read_in(int socket, char *buf, int len) {
 }
 
 
-int configureSocket() {
-  int reuse = 1;
-  int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
 
-  struct sockaddr_in listening_addr;
-  listening_addr.sin_family = PF_INET;
-  listening_addr.sin_port = (in_port_t)htons(30000);
-  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
-    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
-    exit(1);
-  }
-    
-  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
-    fprintf(stderr, "Can't bind to socket.\n");
-    exit(1);
-  }
 
-  if (listening_socket < 0) {
-    fprintf(stderr, "Error creating socket: error %d\n", listening_socket);
-    exit(1);
-  }
 
-  if (listen(listening_socket, 10) == -1) {
-    fprintf(stderr, "Can't listen.\n");
-    exit(1);
-  }
-
-  return listening_socket;
+void Verify_handshake(char* buffer, char * file_sha)
+{
+    int test;    
+    char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
+    memcpy(peer_handshake, buffer, FULLHANDSHAKELENGTH);
+    test = verify_handshake(peer_handshake, file_sha);
+    if(test){
+        fprintf(stderr, "Error on handshake ---> %d\n", test);
+        exit(EXIT_FAILURE);
+    }
+    memset(buffer, 0, sizeof(buffer));
+    free(peer_handshake);    
 }
 
 
+char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces)
+{
+    char * bitfield_message = malloc(bitfieldMsgLength);
+    memcpy(bitfield_message, buffer+FULLHANDSHAKELENGTH, bitfieldMsgLength);
+    return bitfield_message;
+}
+
+void Send_interested(int client_socket, Connections* connection)
+{
+    char * interested = construct_state_message(INTERESTED);
+    connection->status_flags |= 1<<OWNINTERESTED;
+    //Send interested message.
+    if(send(client_socket, interested, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(interested);
+}
+
+void Send_uninterested(int client_socket, Connections* connection)
+{
+    connection->status_flags |= 0<<OWNINTERESTED;
+    char * uninterested = construct_state_message(UNINTERESTED);
+    if(send(client_socket, uninterested, STATEMSGSIZE,0)==-1){
+        fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    free(uninterested); 
+}
+
+void Set_Flag(Connections* connection, int flag, int state)
+{
+    if(state ==1)
+        connection->status_flags |= 1<<flag;
+    else if(state==0)
+        connection->status_flags &= 0<<flag;
+    else
+        printf("Bad State");
+
+}
