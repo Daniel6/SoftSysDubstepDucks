@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
 								if (piece_num >= 0) {
 									// they are interested, unchoked, and have
 									// requested a piece, so send a piece message
-
+									Send_piece(fds[i].fd, &connections[i], piece_num, file_destination, piece_size_bytes);
 								}
 						} else {
 							// they are interested but choked, so unchoke them
