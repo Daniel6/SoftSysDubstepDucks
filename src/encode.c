@@ -6,135 +6,79 @@
 #include "bencode.h"
 
 #define BUFFSIZE 10000
+#define PIECELENGTH 262144
+
+//	Run this file with two arguments: the file you wish to create a torrent for, and the ip of the tracker server for your torrent file
 
 // Compile with:
 // gcc encode.c bencode.h -l ssl -l crypto -o encode.out -g
 
-char *encodeString(char *input, char *ansqwr){
+//	Returns the bencoded format of an input string
+char *encodeString(char *input){
 	char *ans = malloc(80);
 	snprintf(ans, 100, "%zu", strlen(input));
-	// sprintf(ans, "%d", strlen(input));
 	strncat(ans, ":", BUFFSIZE);
 	strncat(ans, input, BUFFSIZE);
 	return ans;
 }
 
-char *encodeInt(int *input, char *answer){
+//	Returns the bencoded format of an input integer as a string
+char *encodeInt(int *input){
 	char ans[80] = "i";
 	char num[80];
-	// itoa(input, num, 10);
 	sprintf(num, "%d", input);
 	strncat(ans, num, BUFFSIZE);
 	strncat(ans, "e", BUFFSIZE);
 	return ans;
 }
 
-char *encodeListString(char *input, char *answer){
-	char ans[80] = "l";
-	int i;
-	for(i = 0; i < sizeof(input); i++){
-		char *encodePiece;
-		strncat(ans, encodeString(input[i], encodePiece), BUFFSIZE);
-	}
-	strncat(ans, "e", BUFFSIZE);
-	return ans;
-}
-
-char *encodeListInt(char *input, char *answer){
-	char ans[80] = "l";
-	int i;
-	for(i = 0; i < sizeof(input); i++){
-		char *encodePiece;
-		strncat(ans, encodeInt(input[i], encodePiece), BUFFSIZE);
-	}
-	strncat(ans, "e", BUFFSIZE);
-	return ans;
-}
-
-char *encodeListList(char *input, char *answer){		// need a way to determine the type of data in the list, currently not working
-	char ans[80] = "l";
-	int i;
-	for(i = 0; i < sizeof(input); i++){
-		char *encodePiece;
-		strncat(ans, encodeString(input[i], encodePiece), BUFFSIZE);
-	}
-	strncat(ans, "e", BUFFSIZE);
-	return ans;
-}
-
-char *encodeListDict(char *input, char *answer){		// need a way to determine the type of data in the dict, currently not working
-	char ans[80] = "l";
-	int i;
-	for(i = 0; i < sizeof(input); i++){
-		char *encodePiece;
-		strncat(ans, encodeString(input[i], encodePiece), BUFFSIZE);
-	}
-	strncat(ans, "e", BUFFSIZE);
-	return ans;
-}
-
-char *encodeDict(char *input, int size, char *answer){	//currently takes "dict" (it's actually just a list) of already bencoded values and returns a string bencoded dict
+//	Returns the bencoded format of an input dictionary
+//	Currently takes "dict" (it's actually just a list) of already bencoded values and returns a string bencoded dict
+char *encodeDict(char *input, int size){
 	char ans[BUFFSIZE] = "d";
 	int i;
-	printf("hi11\n");
-	fflush(stdout);
 	for(i = 0; i < size; i ++){
-		printf(input[i]);
-		fflush(stdout);
-		printf("hi111\n");
-		fflush(stdout);
 		strncat(ans, input[i], BUFFSIZE);
-		printf("hilots\n");
-		fflush(stdout);
 	}
-	printf("hi12\n");
-	fflush(stdout);
 	strncat(ans, "e", BUFFSIZE);
 	return ans;
 }
 
-//it's another dict for info with file name, length, piece length, piece num, md5sum of file (not actually used by bittorrent but is is torrent files)
-char *infoDict(char *filename, char *answer){
+// Given a file, creates a string with info for file name, length, piece length, piece num
+char *infoDict(char *filename){
 	char ans[BUFFSIZE] = "d";
 	char tempAns[BUFFSIZE] = "";
 	FILE *file = fopen(filename, "r");
-	strncat(ans, encodeString("length", tempAns), BUFFSIZE);
+	//	Standard strings to act as keys for the bencoded dictionary
+	strncat(ans, encodeString("length"), BUFFSIZE);
 	fseek(file, 0, SEEK_END);
-	strncat(ans, encodeInt(ftell(file), tempAns), BUFFSIZE);
+	strncat(ans, encodeInt(ftell(file)), BUFFSIZE);
 	rewind(file);
-	strncat(ans, encodeString("name", tempAns), BUFFSIZE);
-	strncat(ans, encodeString(filename, tempAns), BUFFSIZE);
-	strncat(ans, encodeString("piece length", tempAns), BUFFSIZE);
-	strncat(ans, encodeInt(262144, tempAns), BUFFSIZE);
-
-	// uhhh guess each sha is 20 characters per file piece
-	strncat(ans, encodeString("pieces", tempAns), BUFFSIZE);
-	// need to actually break up files and sha that stuff
-	char buffer[262144];
+	strncat(ans, encodeString("name"), BUFFSIZE);
+	strncat(ans, encodeString(filename), BUFFSIZE);
+	strncat(ans, encodeString("piece length"), BUFFSIZE);
+	strncat(ans, encodeInt(PIECELENGTH), BUFFSIZE);
+	// Each sha is 20 characters per file piece
+	strncat(ans, encodeString("pieces"), BUFFSIZE);
+	char buffer[PIECELENGTH];
 	unsigned char sha[SHA_DIGEST_LENGTH];
 	char pieceSHAs[BUFFSIZE] = "";
-	while(fread(buffer, 1, 262144, file) == 262144){
+	//	Goes through the file for a given piece size and hashes each file piece
+	while(fread(buffer, 1, PIECELENGTH, file) == PIECELENGTH){
 		SHA1(buffer, strlen(buffer), sha);
 		strncat(pieceSHAs, sha, BUFFSIZE);
 	}
-	// one last time after while loop has ended to clear the buffer
+	// Hash one last time after while loop has ended to clear the buffer
 	SHA1(buffer, strlen(buffer), sha);
 	strncat(pieceSHAs, sha, BUFFSIZE);
 
-	strncat(ans, encodeString(pieceSHAs, tempAns), BUFFSIZE);
+	//	Add all file piece hashes to the return string
+	strncat(ans, encodeString(pieceSHAs), BUFFSIZE);
 	strncat(ans, "e", BUFFSIZE);
 	return ans;
 }
 
-void populateDict(char *dict[], char *filename, char *address){	// this is now useless, yay
-	char *tempAns = malloc(80);
-	dict[0] = encodeString("announce", tempAns);
-	dict[1] = encodeString(address, tempAns);
-	dict[2] = encodeString("info", tempAns);
-	char *info = malloc(BUFFSIZE);
-	dict[3] = infoDict(filename, info);
-}
-
+//	Given a file name and address to act as the tracker server, creates a torrent file for the original file and writes it to disk
 char *encodeFile(char *target, char *address){
 	char fileContents = NULL;
 	FILE *f = fopen(target, "r");
@@ -147,26 +91,31 @@ char *encodeFile(char *target, char *address){
 	char ans[BUFFSIZE] = "";
 	char *tempAns = malloc(80);
 	char *info = malloc(BUFFSIZE);
-
-	strcpy(dict[0], encodeString("announce", tempAns));
-	strcpy(dict[1], encodeString(address, tempAns));
-	strcpy(dict[2], encodeString("info", tempAns));
-	strcpy(dict[3], infoDict(target, info));
+	strcpy(dict[0], encodeString("announce"));
+	strcpy(dict[1], encodeString(address));
+	strcpy(dict[2], encodeString("info"));
+	strcpy(dict[3], infoDict(target));
 	char finalAns[BUFFSIZE] = "d";
 	int i;
 	for(i = 0; i < dictLength; i++){
-		// printf(dict[i]);
-		fflush(stdout);
 		strncat(finalAns, dict[i], BUFFSIZE);
 	}
 	strncat(finalAns, "e", BUFFSIZE);
 	fprintf(torrentFile, "%s", finalAns);
-
 	fclose(f);
 	fclose(torrentFile);
+	return finalAns;
 }
 
 int main(int argc, char*argv[]){
+	printf("Original: Hello world\n");
+	printf("Bencoded String: %s\n\n", encodeString("Hello world"));
+
+	printf("Original: 12345\n");
+	printf("Bencoded Int: %s\n\n", encodeInt(12345));
+
 	// encodeFile("moby_dick.txt", "127.0.0.1");
-	encodeFile(argv[1], argv[2]);
+	char *torrentFile = malloc(BUFFSIZE);
+	torrentFile = encodeFile(argv[1], argv[2]);
+	printf("Torrent file of your input file: \n%s\n", torrentFile);
 }
