@@ -42,12 +42,17 @@ Ultimately we were unable to complete the project as originally envisioned. Howe
 ### Tracker Server
 The tracker server was improved in the final iteration to no longer accept duplicate entries to the list of connected clients. Some further backend optimizations were made to simplify the decision tree and codebase. The tracker client was integrated with the torrent client such that initializing the torrent automatically registered the client with the tracker and retrieved the list of connected clients.
 
-![example](./images/tracker_comms.png)
+![example](./images/tracker_comms.png)  
 *Torrent client connecting to tracker server on local machine.*
 
-![example](./images/tracker_other_client.png)
-![example](./images/tracker_comms_2.png)
-*2 clients connecting to the same tracker server and seeing each other's IP address.*
+![example](./images/tracker_testing_1.png)  
+*Client A connects to the tracker server and sees only 1 client, himself.*
+
+![example](./images/tracker_test.png)  
+*Client B connects to the tracker server and sees 2 clients, himself and Client A.*
+
+![example](./images/tracker_testing_2.png)  
+*The tracker server sees Client A connect and then Client B.*
 
 ### Learning Objectives
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being to:
