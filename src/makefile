@@ -1,7 +1,7 @@
 all: client tracker tests
 
 client: torrent_client.c
-	gcc -o torrent_client.out torrent_client.c -std=c99
+	gcc -o torrent_client.out torrent_client.c -std=gnu99
 
 tracker: tracker_serv.c
 	gcc -o tracker_serv.out tracker_serv.c

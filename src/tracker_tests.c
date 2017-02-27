@@ -43,14 +43,14 @@ void testAddIfAbsent() {
   addIfAbsent(head, "1111", &numClients);
 
   assert(numClients == 2);
-  assert(head->ip == "1234");
-  assert(head->next->ip == "1111");
+  assert(strcmp(head->ip, "1234") == 0);
+  assert(strcmp(head->next->ip, "1111") == 0);
   assert(head->next->next == 0);
 
   addIfAbsent(head, "1234", &numClients);
 
   assert(numClients == 2);
-  assert(head->ip == "1234");
-  assert(head->next->ip == "1111");
+  assert(strcmp(head->ip, "1234") == 0);
+  assert(strcmp(head->next->ip, "1111") == 0);
   assert(head->next->next == 0);
 }

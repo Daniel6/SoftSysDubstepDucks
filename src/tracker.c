@@ -109,12 +109,15 @@ char *recvMsg(int tracker_socket) {
 void addIfAbsent(Client *head, char *ip, int *numClients) {
   Client *curr_node;
   curr_node = head;
-  if (curr_node->ip == ip) {
+  if (strcmp(curr_node->ip, ip) == 0) {
     // Special case for when linked list contains only 1 node
+    printf("Head was duplicate.\n");
     return;
   }
   while (curr_node->next != 0) {
-    if (curr_node->ip == ip) {
+    printf("Checking next.\n");
+    if (strcmp(curr_node->ip, ip) == 0) {
+      printf("Node was duplicate.\n");
       return;
     } else {
       curr_node = curr_node->next;
@@ -124,7 +127,7 @@ void addIfAbsent(Client *head, char *ip, int *numClients) {
   // When the while loop ends, curr_node should point to the tail of the list
   Client *new_node;
   new_node = malloc(sizeof(Client));
-  new_node->ip = ip;
+  new_node->ip = strdup(ip);
   new_node->next = 0;
   curr_node->next = new_node;
   (*numClients)++;

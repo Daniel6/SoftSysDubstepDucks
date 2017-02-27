@@ -50,6 +50,9 @@ int main(int argc, char *argv[]) {
     if (debugging) {
       printf("======\n");
       printf("Client %s connected.\n", ip);
+      if (numClients > 0) {
+        printf("Client list head: %s\n", c_head->ip);
+      }
     }
 
     // Char pointer to store incoming bytes
@@ -67,13 +70,20 @@ int main(int argc, char *argv[]) {
         if (numClients == 0) {
           // Add client as head AND tail of linked list
           c_head = malloc(sizeof(Client));
-          c_head->ip = ip;
+          c_head->ip = strdup(ip);
           c_head->next = 0; // Initialize next pointer to NULL
           c_tail = c_head;
           numClients = 1;
         } else {
           // Append client to end of list if it is not present
+          if (debugging) {
+            printf("Adding client if absent.\n");
+            printf("Num clients: %d\n", numClients);
+          }
           addIfAbsent(c_head, ip, &numClients);
+          if (debugging) {
+            printf("Updated num clients: %d\n", numClients);
+          }
         }
         if (debugging) {
           printf("Client %s joined, %d clients total.\n", ip, numClients);
