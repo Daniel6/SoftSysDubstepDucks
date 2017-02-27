@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "btp.h"
+#include "file_constructor.h"
 #include "tracker.h"
 
 int main(int argc, char ** argv)
@@ -29,9 +30,12 @@ int main(int argc, char ** argv)
 	int own_port = LISTENER_PORT_NUMBER;
 	//Parse torrent file. 
 
-//	char target[] = "62-Q2.mp3.torrent";
-	//	char length[80];
-	// bt_info_t *ans =  decodeFile(target);
+	char target[] = "moby_dick.txt.torrent";
+	char length[80];
+	bt_info_t *ans =  decodeFile(target);
+
+	int file_destination;
+	char * bitfield_of_current_pieces =	set_initial_bitfield(&file_destination, ans->name, ans->num_pieces, ans->piece_length, ans-> piece_hashes);
 
 	//Parse tracker info
 
@@ -52,8 +56,11 @@ int main(int argc, char ** argv)
 	//Truncating division. This only works right now for total pieces
 	//divisible by 8. 
 	int bitfieldLen = total_pieces_in_file/sizeof(char);
-	char * bitfield_of_current_pieces = malloc(bitfieldLen);
-	memset(bitfield_of_current_pieces, 0, bitfieldLen);
+	if(total_pieces_in_file%8 != 0)
+	{
+		bitfieldLen++;		
+	}
+	print_bits(bitfield_of_current_pieces, bitfieldLen);
 
 
 	//Length of bitfieldMsgs for when sending to other peers. 
