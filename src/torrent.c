@@ -10,24 +10,19 @@
 
 int main(int argc, char *argv[]) {
 	char buffer[BUFSIZ];
-	Connections connections[10];
+	Connections connections[MAX_PEERS];
 	struct sockaddr_in peer[MAX_PEERS];
-	struct pollfd fds[MAX_CONNECTIONS];
+	struct pollfd fds[MAX_PEERS];
 	memset(fds, 0 , sizeof(fds));
 	//Iteration variable
   	int j;
 	int i;
 
-
-	char *my_bitfield;
-
-
-
 	char file_name[] = "moby_dick.txt.torrent";
 	bt_info_t *ans = decodeFile(file_name);
 
 	int file_destination;
-	char * bitfield_of_current_pieces =	set_initial_bitfield(&file_destination, ans->name, ans->num_pieces, ans->piece_length, ans-> piece_hashes);
+	char *bitfield_of_current_pieces = set_initial_bitfield(&file_destination, ans->name, ans->num_pieces, ans->piece_length, ans->piece_hashes);
 
 
 	int piece_size_bytes = ans->piece_length;
@@ -35,8 +30,7 @@ int main(int argc, char *argv[]) {
 	//Truncating division. This only works right now for total pieces
 	//divisible by 8. 
 	int bitfieldLen = total_pieces_in_file/sizeof(char);
-	if(total_pieces_in_file%8 != 0)
-	{
+	if (total_pieces_in_file%8 != 0) {
 		bitfieldLen++;		
 	}
 
@@ -44,30 +38,22 @@ int main(int argc, char *argv[]) {
 	int bitfieldMsgLength = 4 + 1 + bitfieldLen;
 	//Construct Handshake 
 	//Features invovling own_id is not implemented right now. 
-	char * file_sha = "AAAAAAAAAAAAAAAAAAA1";
-	char * own_id = "00000000000000000001";
-	char * own_handshake = construct_handshake(file_sha, own_id);
-
-
-
-
-
-
+	char *file_sha = "AAAAAAAAAAAAAAAAAAA1";
+	char *own_id = "00000000000000000001";
+	char *own_handshake = construct_handshake(file_sha, own_id);
 
 	char *tracker_ip = malloc(16);
 	memcpy(tracker_ip, ans->announce, 16);
 
+	printf("Starting tracker intersaction\n");
 
-
-	printf("Starting tracker stuff\n");
-	//===============================================================================================
-	//Tracker interaction here: Assumption of some kind of char array list 
-	//Creates tracker socket.
+	// Tracker interaction here: Assumption of some kind of char array list 
+	// Creates tracker socket.
 	struct sockaddr_in tracker_addr;
 	tracker_addr.sin_family = AF_INET;
     tracker_addr.sin_port = htons(TRACKER_PORT);
     inet_pton(AF_INET, tracker_ip, &(tracker_addr.sin_addr));
-	 int tracker_socket = socket(AF_INET, SOCK_STREAM, 0);
+	int tracker_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (tracker_socket < 0) {
 	    fprintf(stderr, "Error creating socket: error %d\n", tracker_socket);
     	exit(1);
@@ -85,13 +71,13 @@ int main(int argc, char *argv[]) {
  	    fprintf(stdout, "Connected to tracker at address: %s\n", tracker_ip);
   	}
 
-  	//Used to create a buffer to contain the IP's of each peer.
-	char *peer_buf = calloc(MAX_PEERS,sizeof(char)*16);
-	int *num_of_peers=calloc(1, sizeof(int));
+  	// create a buffer to contain the IP's of each peer.
+	char *peer_buf = calloc(MAX_PEERS, sizeof(char)*16);
+	int *num_of_peers = calloc(1, sizeof(int));
 	*num_of_peers = 0;
 
 	requestPeers(tracker_socket, peer_buf, num_of_peers);
-	printf("Done with tracker stuff\n");
+	printf("Done with tracker interaction\n");
     printf("%d\n", *num_of_peers);
     printf("%d\n", (*num_of_peers)*16);
 	char *peers [MAX_PEERS];
@@ -106,38 +92,31 @@ int main(int argc, char *argv[]) {
 
     printf("Num peers: %d\n", *num_of_peers);
 
-	//This refers to ensuring that we don't have more peers than our max allowed
-	//connections. 
+	// This refers to ensuring that we don't have more peers than our max allowed
+	// connections. 
 	int peers_to_connect_to = *num_of_peers;
-	if(*num_of_peers > MAX_CONNECTIONS-1){
-		peers_to_connect_to = MAX_CONNECTIONS-1;
+	if (*num_of_peers > MAX_CONNECTIONS-1) {
+		peers_to_connect_to = MAX_CONNECTIONS - 1;
 	}
 
-
-
-
-
-	
-	/*
-	 * Do lots of stuff until it is time for main while loop
-	 *
-	*/ 
+	// set up the listener socket
+	// (used for listening for new connections)
 	int listener_socket = configure_socket(); 
 	fds[0].fd = listener_socket;
-	fds[0].events = POLLIN|POLLOUT;
+	fds[0].events = POLLIN | POLLOUT;
 
 	
 	int timeout = 60000; // 1 min in ms
 	int max_peer_index = 0;
-	char * peer_handshake = malloc(FULLHANDSHAKELENGTH);
+	char *peer_handshake = malloc(FULLHANDSHAKELENGTH);
 
-	for(i=0; i<peers_to_connect_to; i++){
-		//Create a new socket address from peer -> do we need this? Might not.
-		//Mostly because of the fact tahat we rewrite peers. But just in case.
+	for (i=0; i < peers_to_connect_to; i++) {
+		// Create a new socket address from peer -> do we need this? Might not.
+		// Mostly because of the fact tahat we rewrite peers. But just in case.
 		struct sockaddr_in *remote_addr = &peer[i];
 		int client_socket = client_socket_wrapper((struct sockaddr_in *)&remote_addr, peers[i], LISTENER_PORT_NUMBER);
 		fds[i+1].fd = client_socket;
-		fds[i+1].events = POLLIN|POLLOUT;
+		fds[i+1].events = POLLIN | POLLOUT;
 		//Initialize the associated connecti
 		initialize_connection(&connections[i], total_pieces_in_file);
 
@@ -148,8 +127,8 @@ int main(int argc, char *argv[]) {
 		}
 		printf("connected\n");
 
-		//Send Handshake
-		if(send(client_socket, own_handshake, FULLHANDSHAKELENGTH,0)==-1){
+		// Send Handshake
+		if (send(client_socket, own_handshake, FULLHANDSHAKELENGTH, 0) == -1) {
 			fprintf(stderr, "Error on send --> %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
@@ -158,43 +137,34 @@ int main(int argc, char *argv[]) {
 
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
-		if(recieved_bytes == -1)
-		{
+		if (recieved_bytes == -1) {
 			fprintf(stderr, "Error on reception");
 			exit(EXIT_FAILURE);
-		}
-		else if(recieved_bytes == 0)
-		{	
+		} else if (recieved_bytes == 0) {	
 		//If the connection was dropped.
 			fprintf(stdout, "Dropped Connection\n");
 			exit(EXIT_FAILURE);
-		}
-		else if(recieved_bytes == FULLHANDSHAKELENGTH)
-		{
+		} else if (recieved_bytes == FULLHANDSHAKELENGTH) {
 	
 			Verify_handshake(buffer, file_sha);
 			memset(buffer, 0,sizeof(buffer));
-		}	
-		else if( recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength)
-		{
+		} else if (recieved_bytes == FULLHANDSHAKELENGTH + bitfieldMsgLength) {
 			Verify_handshake(buffer, file_sha);
 			//Set Peer Bitfield
 
 			connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
 
 			//Check to see if peer had undownloaded pieces.
-			if(0<peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen))
-			{
+			if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
 				Send_interested(client_socket, &connections[i]);	
-			}
-			else{
+			} else {
 				//Send uninterested message
 				Send_uninterested(client_socket, &connections[i]);
 			}
 			//Clear buffer
 			memset(buffer, 0, sizeof(buffer));
 
-		};	
+		}
 	}
 
 
@@ -252,8 +222,6 @@ int main(int argc, char *argv[]) {
 				// this connection has been closed
 				continue;
 			}
-
-	
                             
 			if (fds[i].revents & POLLIN) {
 				int bytes_received = read_in(fds[i].fd, buffer, BUFSIZ);
@@ -266,7 +234,31 @@ int main(int argc, char *argv[]) {
 					fds[i].fd = -1;
 					Set_Flag(&connections[i], CONNECTIONSTATUS,0);
 				} else if (bytes_received == FULLHANDSHAKELENGTH) {
-					// handle handshake
+					Verify_handshake(buffer, file_sha);
+					memset(buffer, 0, sizeof(buffer));
+
+					// need to send our handshake
+
+					if (send(fds[i].fd, own_handshake, FULLHANDSHAKELENGTH, 0) == -1) {
+						fprintf(stderr, "Error on send --> %s\n", strerror(errno));
+						exit(EXIT_FAILURE);
+					}
+				} else if (bytes_received == FULLHANDSHAKELENGTH + bitfieldMsgLength) {
+					Verify_handshake(buffer, file_sha);
+					//Set Peer Bitfield
+
+					connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
+
+					//Check to see if peer had undownloaded pieces.
+					if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
+						Send_interested(fds[i].fd, &connections[i]);	
+					} else {
+						//Send uninterested message
+						Send_uninterested(fds[i].fd, &connections[i]);
+					}
+					//Clear buffer
+					memset(buffer, 0, sizeof(buffer));
+
 				} else {
 					// they sent you a PWP 
 					char *bufPtr = &buffer;
@@ -276,6 +268,7 @@ int main(int argc, char *argv[]) {
                     // determind what kind of message they sent
                     char *msg = get_next_msg(bufPtr, msgID, msgLength);
                     bufPtr += *msgLength;
+                    int *piece_index = malloc(4);
 
                     // respond accordingly
                     switch(*msgID) {
@@ -300,7 +293,7 @@ int main(int argc, char *argv[]) {
                             memcpy(test, msg+5, 4);                        
                             int byte_of_piece = *test/8;
                             int bit_of_piece = *test%8;
-                            char * byte_of_interest = connections[i].peerBitfield;
+                            char *byte_of_interest = connections[i].peerBitfield;
                             byte_of_interest = connections[i].peerBitfield + byte_of_piece;
                             *byte_of_interest |= 1 << (7-bit_of_piece);
                             free(test);
@@ -313,9 +306,7 @@ int main(int argc, char *argv[]) {
                             printf("bitfield tho\n");
                             break;
                         case(REQUEST):
-                            // Some kind of way to put on queue this send command. 
-                        	;
-                        	int *piece_index = malloc(4);
+                            // Some kind of way to put on queue this send command.
                         	memcpy(&(piece_index), msg + 5, 4);
                         	connections[i].piece_to_send = piece_index;
                         	int sent = 0;
@@ -324,27 +315,22 @@ int main(int argc, char *argv[]) {
                         case(PIECE):
                             // Insert saving files code here lol. + Parsing the thing + how to deal 
                             // with blocks within a piece?
-                        	;
                         	memcpy(&(piece_index), msg + 5, 4);
-//                        	char *piece = 
-                        	if (verify_piece()) 
-                        	{
-                        		write_piece(main_fd, piece_index, piece_size_bytes, char * buffer);
-                            	connections[i].received = 1;
+                        	memcpy(&(buffer), msg + 5 + 5, piece_size_bytes);
+                        	if (verify_piece(buffer, ans->piece_hashes[+(i*SHA_DIGEST_LENGTH)])) {
+                        		write_piece(file_destination, piece_index, piece_size_bytes, buffer);
+                        		Set_Flag(&connections[i], PENDINGREQUEST, 0);
                         	}
                             printf("piece tho\n");
                             break;
                         case(CANCEL):
-                        	;
-                            // Need to cancel the queue reponse. 
-                        	int piece = 0;
+                            // Need to cancel the queue reponse.
                         	connections[i].piece_to_send = -1;
-                        	int sent = 0;
                             printf("cancel tho\n");
                             break;
                         default:
+                        	printf("default\n");
                     }
-                    recieved_bytes -= *msgSize;
                     free(msg); 
 				}
 			}
@@ -355,17 +341,17 @@ int main(int argc, char *argv[]) {
 				// if we haven't requested a piece:
 					// send an interested message
 
-				if (connections[i]->pending_request) {
+				if (connections[i].pending_request) {
 					// we already requested from them, waiting for it to be sent
 					// so we should send them something if they are interested
 
-					if (!connections[i]->sent) {
+					if (!connections[i].sent) {
 						// we have not sent them anything so check steps
 						// necessary to send something
 
-						if (connections[i]->peerInterested) {
-							if (!connections[i]->choked) {
-								if (connections[i]->piece_to_send >= 0) {
+						if (connections[i].peerInterested) {
+							if (!connections[i].choked) {
+								if (connections[i].piece_to_send >= 0) {
 									// they are interested, unchoked, and have
 									// requested a piece, so send a piece message
 
@@ -390,7 +376,7 @@ int main(int argc, char *argv[]) {
 						// else 
 							// send interested
 
-					if (connections[i]->choked) {
+					if (connections[i].choked) {
 						// we are choked, so ask them to unchoke
 						// by sending an interested message
 
