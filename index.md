@@ -28,13 +28,9 @@ The data structure backing the list of clients is a singly linked list. This was
 
 We created torrent files following the BitTorrentSpecification, storing information in a bencoded format.  Meta information about the file is stored in the bencoded format after parsing and partitioning the original file, and output to a file with a .torrent extension.  File information is obtained by parsing the original file by bytes and hashing each file piece, then storing information in memory before exporting everything in the bencoded format.
 
-![Torrent encoding test](./images/softsys_torrent.png)
-
 ### Torrent File Parsing
 
 Our torrent file parsing utilizes a library created by Mike Frysinger and edited by Adam Aviv, and extracts the bencoded information from a torrent file.  The extracted information is then used to populate a struct, which can then be used by other programs to easily access torrent file information.
-
-![Torrent decoding test](./images/deocde_test.png)
 
 ## Results
 Ultimately we were unable to complete the project as originally envisioned. However, we did complete many of the subcomponents that we would integrate to complete the final product. The list of working components includes the tracker server, client handshake routine, and torrent file generating process.
@@ -53,6 +49,10 @@ The tracker server was improved in the final iteration to no longer accept dupli
 
 ![example](./images/tracker_testing_2.png)  
 *The tracker server sees Client A connect and then Client B.*
+
+### Torrent File Creation
+![Torrent encoding test](./images/softsys_torrent.png)
+![Torrent decoding test](./images/deocde_test.png)
 
 ### Learning Objectives
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being to:
