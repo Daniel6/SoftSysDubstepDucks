@@ -10,7 +10,7 @@ int main(int argc, char*argv[]){
 	// char *target = malloc(80);
 	// printf("Enter target file name: ");
 	// fgets(target, 80, stdin);
-	char target[] = "62-Q2.mp3.torrent";
+	char target[] = "moby_dick.txt.torrent";
 	bt_info_t *ans =  decodeFile(target);
 	printf("Original file: %s\n", target);
 	// sprintf(length, "%d", ans->length);
