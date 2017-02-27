@@ -18,6 +18,7 @@
 #include <byteswap.h>
 #include <poll.h>
 
+
 // Tracker server constants
 #define MAXCLIENTS 255
 #define TRACKER_PORT 30001
@@ -38,7 +39,7 @@ char *recvMsg(int tracker_socket);
 void joinTracker(int tracker_socket);
 void requestPeers(int tracker_socket, char *peers, int *numPeers);
 // Server only functions
-void sendClients(int socket, Client *head, int numClients);
+void sendClients(int socket, Client *head, int numClients, char *ignore_ip);
 void addIfAbsent(Client *head, char *ip, int *numClients);
 void destroyClientList(Client *head);
 int configureSocket();

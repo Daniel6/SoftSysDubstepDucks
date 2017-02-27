@@ -89,7 +89,8 @@ int main(int argc, char *argv[]) {
           printf("Client %s joined, %d clients total.\n", ip, numClients);
         }
         // Store the ip's of every client in a buffer and send that buffer to the client
-        sendClients(client_socket, c_head, numClients);
+        // dont send the client's own ip to the client
+        sendClients(client_socket, c_head, numClients, ip);
       }
     }
     free(recv_msg);
