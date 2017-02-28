@@ -74,10 +74,10 @@ The tracker server was improved in the final iteration to no longer accept dupli
 
 Upon receiving a list of peers to talk to, the torrent client is able to verify that the peers are running the same torrent client by performing a software handshake with them.
 
-![example](./images/handshake_client.png)
+![example](./images/handshake_client.png)  
 *Client B connects to the tracker server and sees one other client, Client A. Client B then successfully handshakes with Client A.*
 
-![example](./images/client.png)
+![example](./images/client.png)  
 *Client A connects to the tracker server, and then receives a handshake from Client B.*
 
 ## Learning Objectives
