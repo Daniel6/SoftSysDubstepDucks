@@ -1,7 +1,7 @@
 all: torrent tracker tests encode
 
 torrent: torrent.c
-	clang-3.8 -o torrent.out torrent.c file_constructor.c -lssl -lcrypto -std=gnu99
+	clang-3.8 -o torrent.out torrent.c file_constructor.c util.c -lssl -lcrypto -std=gnu99
 
 tracker: tracker_serv.c
 	gcc -o tracker_serv.out tracker_serv.c

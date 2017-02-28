@@ -247,7 +247,6 @@ int main(int argc, char *argv[]) {
 				if (1) {
 					printf("Socket of interest: %d\n", fds[i].fd);
 					int bytes_received = recv(fds[i].fd, buffer, BUFSIZ,0);
-					printf("are we still listening\n");
 					if (bytes_received == EOF) {
 						fprintf(stderr, "Error reading from peer server\n");
 					} else if (bytes_received == 0) {
@@ -257,7 +256,7 @@ int main(int argc, char *argv[]) {
 						fds[i].fd = -1;
 						Set_Flag(&connections[i], CONNECTIONSTATUS,0);
 					} else if (bytes_received == FULLHANDSHAKELENGTH) {
-						printf("handshaking\n");
+						printf("Handshaking with fd: %d\n", fds[i].fd);
 						Verify_handshake(buffer, file_sha);
 						memset(buffer, 0, sizeof(buffer));
 
@@ -368,11 +367,10 @@ int main(int argc, char *argv[]) {
 					}
 				}
 				if (fds[i].revents & POLLOUT) {
-					printf("does this do anything\n");
 					// if we have requested a piece:
-						// check if they have requested a piece
+					// check if they have requested a piece
 					// if we haven't requested a piece:
-						// send an interested message
+					// send an interested message
 
 					int pending_request = (connections[i].status_flags >> PENDINGREQUEST) & 1;
 					int own_interested = (connections[i].status_flags >> OWNINTERESTED) & 1;
@@ -437,8 +435,6 @@ int main(int argc, char *argv[]) {
 					}
 
 				}
-									printf("does this do anything\n");
-
 
 			}
 		}
