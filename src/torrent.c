@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
 
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
+		printf("just recv\n");
 		if (recieved_bytes == -1) {
 			fprintf(stderr, "Error on reception");
 			exit(EXIT_FAILURE);
