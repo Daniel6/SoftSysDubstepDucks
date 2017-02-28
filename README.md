@@ -32,6 +32,8 @@ Andrew Pan
 
 bencode.c written by Mike Frysinger and edited by Adam Aviv
 
+openssl/sha.h by OpenSSL
+
 
 ## License
 MIT License
