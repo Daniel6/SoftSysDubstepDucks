@@ -133,11 +133,11 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		}
 		printf("Sent Handshake\n");
-	
+		print_hex_memory(own_handshake, FULLHANDSHAKELENGTH);	
 
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
-		printf("just recv\n");
+
 		if (recieved_bytes == -1) {
 			fprintf(stderr, "Error on reception");
 			exit(EXIT_FAILURE);
@@ -155,13 +155,15 @@ int main(int argc, char *argv[]) {
 
 			connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
 
+			print_hex_memory(connections[i].peerBitfield, bitfieldLen);
+			printf("%i\n", bitfieldLen);
 			//Check to see if peer had undownloaded pieces.
-			if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
+		/*	if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {*/
 				Send_interested(client_socket, &connections[i]);	
-			} else {
+			/*} else {
 				//Send uninterested message
 				Send_uninterested(client_socket, &connections[i]);
-			}
+			}*/
 			//Clear buffer
 			memset(buffer, 0, sizeof(buffer));
 
