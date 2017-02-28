@@ -42,6 +42,18 @@ We created torrent files following the BitTorrentSpecification, storing informat
 
 Our torrent file parsing utilizes a library created by Mike Frysinger and edited by Adam Aviv, and extracts the bencoded information from a torrent file.  The extracted information is then used to populate a struct, which can then be used by other programs to easily access torrent file information.  The struct contains all of the information from the torrent including file name, size, and tracker server address, in addition to a list of all file piece hashes.
 
+### Peer to Peer Communication
+
+Following the BTP/1.0 protocol standards as explained in [this document](http://jonas.nitro.dk/bittorrent/bittorrent-rfc.html), we laid out what protocols we would be following before attemping to implement any network communications.
+
+Communication between any two peers is done over sockets. Following client-server standards for socket communication, we were able to send information as strings over a socket from a server to a client. However, in BitTorrent, each peer acts as both a client and a server. Thus, each peer has a listener socket over which it listens for new incoming clients. When this peer wants to join the network, it connects to the tracker server and reports its IP so other peers can connect to its listener socket, and in return it receives all other peers' IPs. The peer connects to all of these remote peers over their own sockets.
+
+As our protocol dictates, the first thing a peer does when connecting to a remote peer as a client is to send a handshake message, alerting the remote peer that this client is interested in opening a connection. The remote peer responds with its own handshake and information about what parts of the file of interest it has. After learning what pieces all of the remote peers have, the client begins sending intersted messages in hopes of ultimately being able to download pieces of the file from the peers. After communications have begun, this local peer also can act as a server to remote clients.
+
+In order to track all of these remote connections, we created a struct to store information about every peer. This information includes a number of flags pertaining to what the local peer's statuses and the remote peer's statuses are in regards to this communication: the file descriptor of the socket, choked and interested statuses, the remote peer's bitfield, if the local peer has requested a file piece, what piece it has requested, and what piece it should send to the remote peer. 
+
+In order to handle all of these open sockets, we used `poll()`. 
+
 ## Results
 Ultimately we were unable to complete the project as originally envisioned. However, we did complete many of the subcomponents that we would integrate to complete the final product. The list of working components includes the tracker server, client handshake routine, and torrent file generating process.
 
