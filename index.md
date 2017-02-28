@@ -91,4 +91,4 @@ This project was intended to be a learning exercise for the team to familiarize 
 * Understand how to work with file structures in C
 * Practice making intelligent design choices
 
-So while the project was not as functional as we had hoped, it still proved to be a valuable learning experience and was successful in allowin the team to gain in depth experience in their fields of interest.
+So while the project was not as functional as we had hoped, it still proved to be a valuable learning experience and was successful in allowing the team to gain in-depth experience in their fields of interest.
