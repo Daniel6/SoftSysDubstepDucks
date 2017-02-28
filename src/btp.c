@@ -96,7 +96,14 @@ char * construct_handshake(char* hash, char* id)
     return handshake;
 }
 
-//Actual verifies if the handshake is correct. 
+/*
+ * Verify a handshake message against a SHA1 hash.
+ * If the handshake is verified to be correct, return 0.
+ * If the 'Name Length' field of the handshake does not match
+ * the SHA hash, return -1.
+ * If the 'Protocol Name' field is incorrect, return -2.
+ * If the 'Info Hash' field is incorrect, return -3.
+ */
 int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
 {
 /* 
@@ -138,8 +145,15 @@ int verify_handshake(char* handshakeToVerify, char* clientFileSHA1)
     return 0;
 }
 
-//Create a bitfield message, which contains a bitfield of length bitfieldLen
-//That can deal w/ the length of the object. 
+/*
+ * Create and return a BITFIELD message, given the actual bitfield
+ * and its length.
+ *
+ * bitfield: the bitfield to be made into the message
+ * bitfieldLen: the length of the bitfield to add to the message
+ *
+ * returns: a constructed BITFIELD message
+ */
 char *construct_bitfield_message(char * bitfield, int bitfieldLen)
 {
     //allocate 4 bytes for total message size, 1 byte for status, and bitfield length
@@ -153,7 +167,15 @@ char *construct_bitfield_message(char * bitfield, int bitfieldLen)
     free(msgLen);
     return msg;
 }
-//Create state msg. 
+
+/*
+ * Create either a CHOKE, UNCHOKE, INTERESTED, or UNINTERESTED
+ * message based on the value of msgID.
+ *
+ * msgID: char representing the ID of the state of the message to make
+ *
+ * returns: the created message
+ */
 char * construct_state_message(unsigned char msgID)
 {
     char * msg = malloc(5);
@@ -271,6 +293,12 @@ char * construct_piece_message(int piece_index, int blockoffset, int piece_len, 
     return msg;
 }
 
+/*
+ * Construct and return a CANCEL message.
+ *
+ * piece_index: the index of the piece to cancel the request for
+ * blockoffset: offset for the block 
+ */
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength)
 {
     //MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
@@ -301,12 +329,12 @@ char * construct_cancel_message(int piece_index, int blockoffset, int blocklengt
     return msg;
 }
 
-//Parses the buffer for the next msg , assuming there is no corruption in the buffer. 
-//This has no error handlign right now. 
 /*
  * Parses a buffer to extract information about the message it stores.
  *
- * 
+ * bufPtr: pointer to a buffer storing the message to parse
+ * msgID: pointer to a buffer to extract the ID of the message into
+ * msgSize: pointer to an into to extract the size of the message into
  */
 char* get_next_msg(char * bufPtr,char * msgID, int* msgSize)
 {
