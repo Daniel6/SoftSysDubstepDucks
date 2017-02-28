@@ -80,6 +80,8 @@ Upon receiving a list of peers to talk to, the torrent client is able to verify 
 ![example](./images/client.png)  
 *Client A connects to the tracker server, and then receives a handshake from Client B.*
 
+Ideally the next step in this process would be to begin the file transfer process between clients, however due to time constraints we are unable to produce a working example for this behavior.
+
 ## Learning Objectives
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being to:
 
