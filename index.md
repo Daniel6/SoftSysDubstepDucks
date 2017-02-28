@@ -52,7 +52,7 @@ As our protocol dictates, the first thing a peer does when connecting to a remot
 
 In order to track all of these remote connections, we created a struct to store information about every peer. This information includes a number of flags pertaining to what the local peer's statuses and the remote peer's statuses are in regards to this communication: the file descriptor of the socket, choked and interested statuses, the remote peer's bitfield, if the local peer has requested a file piece, what piece it has requested, and what piece it should send to the remote peer. 
 
-In order to handle all of these open sockets, we used `poll()`. 
+In order to handle all of these open sockets, we used `poll()`. Polling provides us with I/O multiplexing; instead of infintely iterating through every single connection to check if the local peer was sent a message from the corresponding remote peer, poll alerts the local peer when there is a socket that is ready to have information be sent or received. Polling also allows the local peer to check which of the specific sockets are ready for activities.
 
 ## Results
 Ultimately we were unable to complete the project as originally envisioned. However, we did complete many of the subcomponents that we would integrate to complete the final product. The list of working components includes the tracker server, client handshake routine, and torrent file generating process.
