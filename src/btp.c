@@ -23,6 +23,8 @@ int configure_socket() {
         fprintf(stderr, "Error on listen --> %s", strerror(errno));
         exit(1);
     }
+
+    return listening_socket;
 }
 
 /*
