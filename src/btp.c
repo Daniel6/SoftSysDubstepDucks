@@ -1,81 +1,5 @@
 #include "btp.h"
 
-int configure_socket() {
-  int reuse = 1;
-  int listening_socket = socket(PF_INET, SOCK_STREAM, 0);
-
-  struct sockaddr_in listening_addr;
-  listening_addr.sin_family = PF_INET;
-  listening_addr.sin_port = (in_port_t)htons(30000);
-  listening_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-  if (setsockopt(listening_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(int)) == -1) {
-    fprintf(stderr, "Can't set the 'reuse' option on the socket.\n");
-    exit(1);
-  }
-    
-  if (bind(listening_socket, (struct sockaddr *)&listening_addr, sizeof(listening_addr)) == -1) {
-    fprintf(stderr, "Can't bind to socket.\n");
-    exit(1);
-  }
-
-    if ((listen(listening_socket, 10)) == -1) {
-        fprintf(stderr, "Error on listen --> %s", strerror(errno));
-        exit(1);
-    }
-}
-
-/*
- * Set up and return a socket for communicating with other clients.
- *
- * remote_addr: address to connect to
- * server_address: address of the server
- * port_number: port of the connection
- */
-int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number){
-  /* Zeroing remote_addr struct */
-    memset(remote_addr, 0, sizeof(struct sockaddr_in));
-  /* Construct remote_addr struct */
-    remote_addr->sin_family = AF_INET;
-    inet_pton(AF_INET, server_address, &(remote_addr->sin_addr));
-    remote_addr->sin_port = htons(port_number);
-    int client_socket = socket(AF_INET, SOCK_STREAM, 0);
-  /* Create client socket */
-    if (client_socket == -1) {
-        fprintf(stderr, "Error creating socket --> %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    return client_socket;
-}
-
-
-// Useful piece of support code when debugging some of this stuff
-// Context was using it as a way to dump hex of char arrays easily.
-void print_hex_memory(void *mem, int size) {
-  int i;
-  //Iterates over each byte in mem. 
-  unsigned char *p = (unsigned char *)mem;
-  for (i=0;i<size;i++) {
-    printf("0x%02x ", p[i]);
-  }
-  printf("\n");
-}
-
-// Support code to print the binary representation of some memory.
-// source: http://stackoverflow.com/questions/35364772/how-to-print-memory-bits-in-c
-void print_bits ( void* buf, size_t size_in_bytes )
-{
-    char* ptr = (char*)buf;
-    //Iterate over each bit in memory, first by byte, then by bit. 
-    for (size_t i = 0; i < size_in_bytes; i++) {
-        for (short j = 7; j >= 0; j--) {
-            printf("%d", (ptr[i] >> j) & 1);
-        }
-        printf(" ");
-    }
-    printf("\n");
-}
-
 
 //Constructs handshake used for verification with other computers. 
 char * construct_handshake(char* hash, char* id)
@@ -188,36 +112,9 @@ char * construct_state_message(unsigned char msgID)
 
 }
 
-//Count bits in your byte
-int count_char_bits(char b)
-{
-    //BK's method for counting bits in a char. 
-    // Works by counting the number of bits needed to have the number equal 0. 
-    // Sourced from http://www.keil.com/support/docs/194.htm
-    int count;
-    for (count = 0; b != 0; count++)
-    {
-       b &= b - 1; // this clears the LSB-most set bit
-    }
-
-    return count;
-}
-
-//Count bits in your bitfield. 
-int count_bitfield_bits(char * bitfield, int bitfieldLen)
-{
-    int count = 0;
-    int x = 0;
-    for(x =0; x<bitfieldLen; x++)
-    {
-        count += count_char_bits(*(bitfield+x));
-    }
-    return count;
-
-
-}
 
 //Construct a have msg. 
+//Takes in the index of the piece that is desired. 
 char * construct_have_message(int piece_index)
 {
     char * msg = malloc(9);
@@ -236,6 +133,11 @@ char * construct_have_message(int piece_index)
     return msg;
 }
 
+//Construct a request message.
+//piece_index: Location of piece
+//blockoffset: The location of the specific part of the piece that is requested
+//blocklength: The length of the block to transfer.
+//Returns: a Request Msg. 
 char * construct_request_message(int piece_index, int blockoffset, int blocklength)
 {
     //MsgLen = 4 bytes for msg_len 1 for msgID, 12 for piece, block_off, block_len
@@ -266,6 +168,13 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
     return msg;
 }
 
+
+//Construct a piece message.
+//piece_index: Location of piece
+//blockoffset: The location of the specific part of the piece that is requested
+//piece_len: The length of the piece being transferred transfer.
+//piece: The actual piece, length 'piece_len'
+//Returns: a Piece Msg. 
 char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece)
 {
     //MsgLen = 4 bytes for msg_len 1 for msgID, 8 for piece, block_off
@@ -451,103 +360,6 @@ char *get_piece_from_file(int fd, int piece_num, int piece_len) {
     return strcpy(malloc(sizeof(char) * piece_len), buffer);
     //return piece;
 }
-
-
-/* Makes a new Linked List node structure.
- *  
- * val: value to store in the node.
- * next: pointer to the next node
- * 
- * returns: pointer to a new node
- */
-Node *make_node(int val, Node *next) {
-    Node *node = malloc(sizeof(Node));
-    node->val = val;
-    node->next = next;
-    return node;
-}
-
-/*
- * Returns the value of a Node.
- * 
- * node: node to get value from
- *
- * returns: int that is the value of node
- */
-int get_val(Node *node) {
-    return node->val;
-}
-
-
-/*
- * Determine what pieces should be requested from which peers
- *
- * connections: a list of peer connections
- * num_connections: total number of connections
- *
- * returns: head of a Linked List, where value is piece number
- *          and the order of the nodes is the order of the peers
- *          in connections
- */
-Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces) {
-    Node *head = make_node(-1, NULL);
-    Node *curr = head;
-
-    // assign a piece to every peer connections
-    for (int i = 0; i < num_connections; i++) {
-        // set value of ith node to piece number that 
-        // should be requested from ith peer connection
-        curr->val = get_piece(connections[i].peerBitfield, piece_statuses, num_pieces);
-
-        if (i != num_connections - 1) {
-            // don't make a new next node if
-            // this is the last connection
-            curr->next = make_node(-1, NULL);
-            *curr = *(curr->next);
-        }
-    }
-
-    return head;
-}
-
-void error(char *msg) {
-    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
-    exit(1);
-}
-
-int say(int socket, char *s) {
-    int result = send(socket, s, strlen(s), 0);
-    if (result == -1) {
-        // don't call error()
-        // don't want to stop server if there's a problem with just one client
-        fprintf(stderr, "%s: %s\n", "Error talking to the client", strerror(errno));
-    }
-    return result;
-}
-
-int read_in(int socket, char *buf, int len) {
-    char *s = buf;
-    int slen = len;
-    int c = recv(socket, s, slen, 0);
-    // keep reading until no more chars or reach '\n'
-    while ((c > 0) && (s[c-1] != '\n')) {
-        s += c;
-        slen -= c;
-        c = recv(socket, s, slen, 0);
-    }
-    if (c < 0) {
-        // in case there's an error
-        return c;
-    } else if (c == 0) {
-        // nothing read, so send an empty string
-        buf[0] = '\0';
-    } else {
-        // replace '\r' with '\0'
-        s[c-1]='\0';
-    }
-    return len - slen;
-}
-
 
 
 

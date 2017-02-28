@@ -1,5 +1,7 @@
 /*
   Functions relating to the communication between tracker and client
+  
+  Author: Daniel Bishop
 */
 
 #include "tracker.h"
@@ -47,6 +49,9 @@ void joinTracker(int tracker_socket) {
   }
 }
 
+/*
+  Given a string message, prepend it with a singly byte containing the length of the message.
+*/
 char *buildMsg(char *msg) {
   int len = strlen(msg);
   char *data = malloc(len + 1);
@@ -55,6 +60,12 @@ char *buildMsg(char *msg) {
   return data;
 }
 
+/*
+  Send a string message over a given socket filedef. The string message is automatically
+  prepended with the length of the string, allowing for easy transmission over the network.
+  
+  Returns 0 if successful, or -1 if an error occured (error message to stderr).
+*/
 int sendMsg(int tracker_socket, char *msg) {
   char *data = buildMsg(msg);
   if (send(tracker_socket, data, strlen(msg) + 1, MSG_NOSIGNAL) == -1) {
@@ -65,6 +76,12 @@ int sendMsg(int tracker_socket, char *msg) {
   return 0;
 }
 
+/*
+  Sends a message over a given socket. This differs to sendMsg() in that the char * message
+  is not necessarily a string, and so the length of the data must be passed as a parameter.
+  
+  Returns 0 if message was sent successfully, or -1 if an error occured (error msg to stderr).
+*/
 int sendData(int socket, char *data, int len) {
   if (send(socket, data, len, MSG_NOSIGNAL) == -1) {
     fprintf(stderr, "[Error %s] ", strerror(errno));
@@ -74,6 +91,11 @@ int sendData(int socket, char *data, int len) {
   return 0;
 }
 
+/*
+  Blocking wrapper for recv() on socket provided. 
+  
+  Returns pointer to buffer containing message.
+*/
 char *recvMsg(int tracker_socket) {
   ssize_t recv_len;
   char *buffer = malloc(BUFSIZ);

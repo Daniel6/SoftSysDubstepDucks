@@ -6,7 +6,7 @@
 #include "bencode.h"
 
 #define BUFFSIZE 10000
-#define PIECELENGTH 262144
+#define PIECELENGTH 256
 
 //	Run this file with two arguments: the file you wish to create a torrent for, and the ip of the tracker server for your torrent file
 

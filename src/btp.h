@@ -85,10 +85,7 @@ typedef struct connection_info {
 	char * peerBitfield;
 } Connections;
 
-typedef struct node {
-    int val;
-    struct node *next;
-} Node;
+
 
 
 #include "btp.c"
@@ -96,12 +93,7 @@ typedef struct node {
 //Inherent assumption that hash and char are length 20 arrays. 
 void initialize_connection(Connections* connection_to_initialize, int total_pieces_in_file);
 char* construct_handshake(char * hash, char * id);
-int server_socket_wrapper(struct sockaddr_in * server_addr, char * server_address, int port_number);
-int client_socket_wrapper(struct sockaddr_in * remote_addr, char * server_address, int port_number);
-void print_hex_memory(void *mem, int size);
 int verify_handshake(char* handshakeToVerify, char* clientFileSHA1);
-int count_char_bits(char b);
-int count_bitfield_bits(char * bitfield, int bitfieldLen);
 char * construct_bitfield_message(char * bitfield, int bitfieldLen);
 char * construct_state_message(unsigned char msgID);
 char * construct_have_message(int piece_index);
@@ -109,17 +101,9 @@ char * construct_request_message(int piece_index, int blockoffset, int blockleng
 char * construct_piece_message(int piece_index, int blockoffset, int piece_len, char *piece);
 char * construct_cancel_message(int piece_index, int blockoffset, int blocklength);
 int peerContainsUndownloadedPieces(char * peer_buffer, char* own_buffer,int bitfieldLen);
-void print_bits ( void* buf, size_t size_in_bytes );
 
-Node *make_node(int val, Node *next);
-int get_val(Node *node);
-Node *assign_pieces(struct connection_info *connections, int num_connections, int piece_statuses[], int num_pieces);
 char *get_piece_from_file(int fd, int piece_num, int piece_len);
-void error(char *msg);
-int say(int socket, char *s);
-int read_in(int socket, char *buf, int len);
 
-int configure_socket();
 void Verify_handshake(char* buffer, char * file_sha);
 char *  Set_peerBitfield(char * buffer, int bitfieldMsgLength, int total_pieces);
 void Send_interested(int client_socket, Connections* connection);

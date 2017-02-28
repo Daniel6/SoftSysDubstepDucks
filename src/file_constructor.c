@@ -54,6 +54,7 @@ char* set_initial_bitfield(int *fd, char *file_name, int num_pieces, int piece_l
 		        fprintf(stderr, "Error opening file to torrent");
 		}
 	//}
+		return bitfield;
 }
 
 

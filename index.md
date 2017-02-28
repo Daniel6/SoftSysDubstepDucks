@@ -70,6 +70,18 @@ The tracker server was improved in the final iteration to no longer accept dupli
 
 *Given a torrent file, all relevant meta file information is extracted*
 
+### Torrent Client Handshake Protocol
+
+Upon receiving a list of peers to talk to, the torrent client is able to verify that the peers are running the same torrent client by performing a software handshake with them.
+
+![example](./images/handshake_client.png)  
+*Client B connects to the tracker server and sees one other client, Client A. Client B then successfully handshakes with Client A.*
+
+![example](./images/client.png)  
+*Client A connects to the tracker server, and then receives a handshake from Client B.*
+
+Ideally the next step in this process would be to begin the file transfer process between clients, however due to time constraints we are unable to produce a working example for this behavior.
+
 ## Learning Objectives
 This project was intended to be a learning exercise for the team to familiarize with the C language and get hands on experience. We accomplished the learning goals which we established at the creation of the project, those being to:
 

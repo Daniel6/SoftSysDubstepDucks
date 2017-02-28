@@ -24,13 +24,17 @@ int main(int argc, char *argv[]) {
 	int file_destination;
 	char *bitfield_of_current_pieces = set_initial_bitfield(&file_destination, ans->name, ans->num_pieces, ans->piece_length, ans->piece_hashes);
 
-
 	int piece_size_bytes = ans->piece_length;
-	int total_pieces_in_file = ans->length;
+	int total_pieces_in_file = ans->num_pieces;
+	printf("\nTotal Pieces In File: %d\n", total_pieces_in_file);
+	printf("Piece Size: %d\n", piece_size_bytes);
+
 	//Truncating division. This only works right now for total pieces
 	//divisible by 8. 
 	int bitfieldLen = total_pieces_in_file/sizeof(char);
-	if (total_pieces_in_file%8 != 0) {
+
+	printf("Bitfield Length: %d\n", bitfieldLen);
+	if ((total_pieces_in_file/8)*8 == total_pieces_in_file) {
 		bitfieldLen++;		
 	}
 
@@ -41,6 +45,7 @@ int main(int argc, char *argv[]) {
 	char *file_sha = "AAAAAAAAAAAAAAAAAAA1";
 	char *own_id = "00000000000000000001";
 	char *own_handshake = construct_handshake(file_sha, own_id);
+
 
 	char *tracker_ip = malloc(16);
 	memcpy(tracker_ip, ans->announce, 16);
@@ -78,9 +83,7 @@ int main(int argc, char *argv[]) {
 
 	requestPeers(tracker_socket, peer_buf, num_of_peers);
 	printf("Done with tracker interaction\n");
-    printf("%d\n", *num_of_peers);
-    printf("%d\n", (*num_of_peers)*16);
-	char *peers [MAX_PEERS];
+    char *peers [MAX_PEERS];
   	for (j = 0; j < *num_of_peers; j++) {
    		peers[j] = malloc(16);
   		memcpy(peers[j], peer_buf + (16 * j), 16);
@@ -133,11 +136,10 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		}
 		printf("Sent Handshake\n");
-		print_hex_memory(own_handshake, FULLHANDSHAKELENGTH);	
+	
 
 		uint32_t recieved_bytes = 0;
 		recieved_bytes = recv(client_socket, buffer, BUFSIZ, 0);
-
 		if (recieved_bytes == -1) {
 			fprintf(stderr, "Error on reception");
 			exit(EXIT_FAILURE);
@@ -155,27 +157,26 @@ int main(int argc, char *argv[]) {
 
 			connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
 
-			print_hex_memory(connections[i].peerBitfield, bitfieldLen);
-			printf("%i\n", bitfieldLen);
 			//Check to see if peer had undownloaded pieces.
-		/*	if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {*/
+			if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
 				Send_interested(client_socket, &connections[i]);	
-			/*} else {
+			} else {
 				//Send uninterested message
 				Send_uninterested(client_socket, &connections[i]);
-			}*/
+			}
 			//Clear buffer
 			memset(buffer, 0, sizeof(buffer));
 
 		}
 	}
 
-
-	printf("hello\n");
 	int* test = malloc(4);
 	int *piece_index = malloc(4);
 
+	printf("peers to connect to: %d\n", peers_to_connect_to);
 	while (1) {
+		//Clear buffer
+		memset(buffer, 0, sizeof(buffer));
 		int num_have_pieces = 0;
 		for (i = 0; i < total_pieces_in_file; i++) {
 			if (bitfield_of_current_pieces[i] & 255 == 1) {
@@ -185,15 +186,19 @@ int main(int argc, char *argv[]) {
 		if (num_have_pieces == total_pieces_in_file) {
 			printf("You have the entire file!\n");
 		}
-
-		int n_ready = poll(fds, max_peer_index + 1, timeout); // number of ready connections
+		printf("%d\n", max_peer_index);
+		int n_ready = poll(fds, MAX_PEERS, 60000); // number of ready connections
+		printf("N_ready = %d\n", n_ready);
 		if (n_ready == -1) {
 			perror("Poll error: "); 
 		} else if (n_ready == 0) {
 			printf("Timeout! No data after %i ms\n", timeout);
-		} else {
+		} else 
+		{
+			printf("testing to see if else\n");
 			// check listener
 			if (fds[0].revents & POLLIN) {
+
 				struct sockaddr_storage client_addr;
     			unsigned int address_size = sizeof(client_addr);
 
@@ -207,36 +212,41 @@ int main(int argc, char *argv[]) {
     				// save fd to connections array as first unused 
     				// element in fds (some connections might've closed)
     				// TODO: make into function called save_to_connections(fds, )
-    				for (i = 1; i < MAX_CONNECTIONS; i++) {
-    					if (fds[i].fd < 0) {
-    						fds[i].fd = connect_fd;
-    						if (i > max_peer_index) {
-    							max_peer_index = 1;
-    							peers_to_connect_to++;
-    						}
-    						break;
-    					}
-    				}
-
+    				// for (i = 1; i < MAX_CONNECTIONS; i++) {
+    				// 	if (fds[i].fd < 0) {
+    				// 		printf("%d\n",i);
+    				// 		fds[i].fd = connect_fd;
+    				// 		if (i > max_peer_index) {
+    				// 			max_peer_index = 1;
+    				// 			peers_to_connect_to++;
+    				// 		}
+    				// 		break;
+    				// 	}
+    				// }
+    				fds[1].fd = connect_fd;
+    				peers_to_connect_to++;
+    				max_peer_index++;
     			}
 
     			if (--n_ready <= 0) {
     				// no more fds are ready
-    				continue;
+    				//continue;
     			}
     			
     		
 			}
-
 			// check all clients
-			for (i = 1; i < max_peer_index; i++) {
+			for (i = 1; i < max_peer_index+1; i++) {
+				
 				if (fds[i].fd < 0) {
 					// this connection has been closed
 					continue;
 				}
-                
-				if (fds[i].revents & POLLIN) {
-					int bytes_received = read_in(fds[i].fd, buffer, BUFSIZ);
+
+//				if (fds[i].revents & POLLIN) {
+				if (1) {
+					printf("Socket of interest: %d\n", fds[i].fd);
+					int bytes_received = recv(fds[i].fd, buffer, BUFSIZ,0);
 					if (bytes_received == EOF) {
 						fprintf(stderr, "Error reading from peer server\n");
 					} else if (bytes_received == 0) {
@@ -246,6 +256,7 @@ int main(int argc, char *argv[]) {
 						fds[i].fd = -1;
 						Set_Flag(&connections[i], CONNECTIONSTATUS,0);
 					} else if (bytes_received == FULLHANDSHAKELENGTH) {
+						printf("Handshaking with fd: %d\n", fds[i].fd);
 						Verify_handshake(buffer, file_sha);
 						memset(buffer, 0, sizeof(buffer));
 
@@ -263,12 +274,14 @@ int main(int argc, char *argv[]) {
 							exit(EXIT_FAILURE);
 						}
 					} else if (bytes_received == FULLHANDSHAKELENGTH + bitfieldMsgLength) {
+						printf("handshaking w/ a bit\n");
 						Verify_handshake(buffer, file_sha);
 						//Set Peer Bitfield
 
 						connections[i].peerBitfield = Set_peerBitfield(buffer, bitfieldMsgLength, total_pieces_in_file);
 
 						//Check to see if peer had undownloaded pieces.
+
 						if (0 < peerContainsUndownloadedPieces(connections[i].peerBitfield, bitfield_of_current_pieces, bitfieldLen)) {
 							Send_interested(fds[i].fd, &connections[i]);	
 						} else {
@@ -316,7 +329,6 @@ int main(int argc, char *argv[]) {
 	                            byte_of_interest = connections[i].peerBitfield + byte_of_piece;
 	                            *byte_of_interest |= 1 << (7-bit_of_piece);
 	                            free(test);
-	                            print_bits(connections[i].peerBitfield, 2);
 	                            printf("have tho\n");            
 	                            break;
 	                        case(BITFIELD):
@@ -354,12 +366,11 @@ int main(int argc, char *argv[]) {
 	                    free(msg); 
 					}
 				}
-
 				if (fds[i].revents & POLLOUT) {
 					// if we have requested a piece:
-						// check if they have requested a piece
+					// check if they have requested a piece
 					// if we haven't requested a piece:
-						// send an interested message
+					// send an interested message
 
 					int pending_request = (connections[i].status_flags >> PENDINGREQUEST) & 1;
 					int own_interested = (connections[i].status_flags >> OWNINTERESTED) & 1;
