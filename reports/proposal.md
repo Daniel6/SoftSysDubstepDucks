@@ -1,7 +1,7 @@
-##Creating a BitTorrent Client in C
+## Creating a BitTorrent Client in C
 Daniel Bishop, Andrew Pan, Thuc Tran, Jordan Van Duyne
 
-###Project Goal
+### Project Goal
 
 We are attempting to create our own peer to peer file transfer network similar to how popular torrenting systems like BitTorrent operate today. Peer to peer file transfer provides several advantages over traditional FTP. For instance, the load of transferring the file is distributed over many clients instead of loaded onto one server. The network is also resistant to outages, as even if a few peers go offline, the others can pick up the slack.
 
@@ -12,11 +12,11 @@ Improvements that extend this MVP would be implementing a protocol for requestin
 A perpendicular improvement would be to also implement a P2P Chatroom so that you can send text to everybody else on the network. 
 
 
-###Project Backlog
+### Project Backlog
 
 [Our Trello Board](https://trello.com/b/vVNhx3WF/softsysdubstepducks)
 
-###Project System Map
+### Project System Map
 
 ![System Interaction Map](https://github.com/Daniel6/SoftSysDubstepDucks/blob/master/images/torrent_system_plan.jpg)
 
@@ -26,7 +26,7 @@ System interaction map for BitTorrent client
 
 Flowchart of actions for client to perform
 
-###Roadblocks
+### Roadblocks
 
 1. Olin network blocks torrent traffic so our network must be local using a network switch.  
 Allen and Ben have provided us with a network switch so that we may do this.
@@ -35,7 +35,7 @@ So far we have been able to communicate each other, but we will keep in mind tha
 3. Unfamiliarity with content (Breaking up files, bencoding, SHA1 hashing, networking mixups, etc).  
 We have yet to do this, but are consulting lots of resources about the process.
 
-###Annotated Bibliography
+### Annotated Bibliography
 
 [https://github.com/bschmaltz/c-p2p-chat](https://github.com/bschmaltz/c-p2p-chat)
 
